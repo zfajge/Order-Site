@@ -11,7 +11,6 @@ const SELLER_PASSWORD = process.env.SELLER_PASSWORD || DEFAULT_SELLER_PASSWORD;
 const SUPABASE_URL = normalizeEnv(process.env.SUPABASE_URL);
 const SUPABASE_SERVICE_ROLE_KEY = normalizeEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const SUPABASE_ITEMS_TABLE = normalizeEnv(process.env.SUPABASE_ITEMS_TABLE) || "moveout_items";
-const sellerSessions = new Set();
 
 const dataDirectory = path.join(__dirname, "data");
 const dataFilePath = path.join(dataDirectory, "items.json");
@@ -555,8 +554,8 @@ app.use(async (_req, res, next) => {
 });
 
 function requireSeller(req, res, next) {
-  const token = req.header("x-seller-token");
-  if (!token || !sellerSessions.has(token)) {
+  const password = normalizeString(req.header("x-seller-password"));
+  if (!password || password !== SELLER_PASSWORD) {
     return res.status(401).json({ error: "Seller access required." });
   }
   return next();
@@ -593,16 +592,10 @@ app.post("/api/seller-auth", (req, res) => {
   if (!password || password !== SELLER_PASSWORD) {
     return res.status(401).json({ error: "Seller password is incorrect." });
   }
-  const token = crypto.randomUUID();
-  sellerSessions.add(token);
-  return res.json({ ok: true, token });
+  return res.json({ ok: true });
 });
 
 app.post("/api/seller-logout", (req, res) => {
-  const token = normalizeString(req.body?.token);
-  if (token) {
-    sellerSessions.delete(token);
-  }
   return res.json({ ok: true });
 });
 

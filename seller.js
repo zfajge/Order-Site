@@ -4,6 +4,7 @@ const IMAGE_JPEG_QUALITY = 0.82;
 
 const state = {
   sellerToken: "",
+  sellerPassword: "",
   editingItemId: null,
   items: [],
 };
@@ -54,6 +55,9 @@ async function apiRequest(path, options = {}) {
   }
   if (state.sellerToken) {
     headers["x-seller-token"] = state.sellerToken;
+  }
+  if (state.sellerPassword) {
+    headers["x-seller-password"] = state.sellerPassword;
   }
 
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
@@ -277,6 +281,7 @@ async function unlockSeller(event) {
       body: JSON.stringify({ password }),
     });
     state.sellerToken = payload?.token || "";
+    state.sellerPassword = password;
     sellerUnlockForm.reset();
     setMessage(sellerUnlockMessage, "Seller controls unlocked.");
     updateSellerUi();
@@ -288,6 +293,7 @@ async function unlockSeller(event) {
 }
 
 function lockSeller() {
+  state.sellerPassword = "";
   state.sellerToken = "";
   resetItemForm();
   updateSellerUi();
