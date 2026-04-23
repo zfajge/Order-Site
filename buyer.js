@@ -349,7 +349,7 @@ function renderCart() {
   });
 }
 
-function buildMailtoLink({ buyerName, buyerPhone, processed }) {
+function buildMailtoLink({ buyerName, buyerPhone, requestedItems, processed, skipped }) {
   const subject = encodeURIComponent(`Move-Out Sale Checkout: ${buyerName}`);
   const lines = [
     "New checkout submission:",
@@ -360,17 +360,34 @@ function buildMailtoLink({ buyerName, buyerPhone, processed }) {
     "Items:",
   ];
 
-  processed.forEach((entry, index) => {
-    const statusText = describeCheckoutAction(entry.action);
-    const offerText =
-      entry.offer == null ? "No offer submitted" : `Offer submitted: ${formatPrice(entry.offer)}`;
+  const processedById = new Map(
+    (Array.isArray(processed) ? processed : []).map((entry) => [entry.itemId, entry])
+  );
+  const skippedById = new Map(
+    (Array.isArray(skipped) ? skipped : []).map((entry) => [entry.itemId, entry])
+  );
+
+  const submittedItems = Array.isArray(requestedItems) ? requestedItems : [];
+  submittedItems.forEach((entry, index) => {
+    const processedEntry = processedById.get(entry.itemId);
+    const skippedEntry = skippedById.get(entry.itemId);
+    const statusText = processedEntry
+      ? describeCheckoutAction(processedEntry.action)
+      : skippedEntry
+      ? `Not processed (${skippedEntry.reason || "Unknown reason"})`
+      : "Submitted";
+
     lines.push(
       `${index + 1}. ${entry.itemName}`,
       `   Status: ${statusText}`,
       `   Original price: ${formatPrice(entry.originalPrice)}`,
-      `   ${offerText}`
+      `   Offer submitted: ${formatPrice(entry.offer)}`
     );
   });
+
+  if (!submittedItems.length) {
+    lines.push("(No items included)");
+  }
 
   lines.push(
     "",
@@ -442,6 +459,8 @@ async function submitCheckout(event) {
     }
     selections.push({
       itemId: item.id,
+      itemName: item.name,
+      originalPrice: item.price,
       action: "hold",
       offer: offerValue,
     });
@@ -479,7 +498,9 @@ async function submitCheckout(event) {
       window.location.href = buildMailtoLink({
         buyerName: payload.buyerName || buyerName,
         buyerPhone: payload.buyerPhone || buyerPhone,
+        requestedItems: selections,
         processed: payload.processed,
+        skipped: payload.skipped,
       });
     } else {
       setCheckoutMessage("No items were processed.", true);
