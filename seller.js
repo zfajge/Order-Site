@@ -221,7 +221,16 @@ function renderItems() {
     return;
   }
 
-  state.items.forEach((item) => {
+  const sortedItems = [...state.items].sort((a, b) => {
+    const aUnavailable = a.status !== "available" ? 1 : 0;
+    const bUnavailable = b.status !== "available" ? 1 : 0;
+    if (aUnavailable !== bUnavailable) {
+      return aUnavailable - bUnavailable;
+    }
+    return 0;
+  });
+
+  sortedItems.forEach((item) => {
     const fragment = itemCardTemplate.content.cloneNode(true);
     const image = fragment.querySelector(".item-image");
     const title = fragment.querySelector(".item-title");
@@ -233,6 +242,7 @@ function renderItems() {
     const overlayOwner = fragment.querySelector(".overlay-owner");
     const editBtn = fragment.querySelector(".edit-item-btn");
     const deleteBtn = fragment.querySelector(".delete-item-btn");
+    const markAvailableBtn = fragment.querySelector(".mark-available-btn");
     const galleryWrap = fragment.querySelector(".gallery-thumbs");
 
     image.src =
@@ -267,6 +277,12 @@ function renderItems() {
 
     editBtn.disabled = !isSellerUnlocked();
     deleteBtn.disabled = !isSellerUnlocked();
+    markAvailableBtn.disabled = !isSellerUnlocked();
+    markAvailableBtn.classList.toggle("hidden", item.status === "available");
+    markAvailableBtn.textContent =
+      item.status === "hold"
+        ? "Remove Hold (Mark Available)"
+        : "Remove Bought (Mark Available)";
 
     const openDetail = () => showItemDetail(item);
     image.style.cursor = "pointer";
@@ -296,6 +312,25 @@ function renderItems() {
       }
       try {
         await apiRequest(`/items/${item.id}`, { method: "DELETE" });
+        await refreshItems();
+        renderItems();
+      } catch (error) {
+        setMessage(itemFormMessage, error.message, true);
+      }
+    });
+
+    markAvailableBtn.addEventListener("click", async () => {
+      if (!isSellerUnlocked()) {
+        return;
+      }
+      try {
+        await apiRequest(`/items/${item.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            status: "available",
+            ownerName: "",
+          }),
+        });
         await refreshItems();
         renderItems();
       } catch (error) {

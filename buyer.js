@@ -24,6 +24,7 @@ const detailItemDescription = document.getElementById("detail-item-description")
 const detailExtraImages = document.getElementById("detail-extra-images");
 const detailAddToCartBtn = document.getElementById("detail-add-to-cart-btn");
 const closeItemDetailBtn = document.getElementById("close-item-detail-btn");
+const checkoutWarning = document.getElementById("checkout-email-warning");
 
 function formatPrice(price) {
   return `$${Number(price).toFixed(2)}`;
@@ -165,7 +166,11 @@ async function apiRequest(path, options = {}) {
 
 async function refreshItems() {
   const payload = await apiRequest("/items");
-  state.items = Array.isArray(payload.items) ? payload.items : [];
+  const incomingItems = Array.isArray(payload.items) ? payload.items : [];
+  const availableFirst = incomingItems
+    .filter((item) => item.status === "available")
+    .concat(incomingItems.filter((item) => item.status !== "available"));
+  state.items = availableFirst;
   const validIds = new Set(state.items.map((item) => item.id));
   state.cart = state.cart.filter((id) => validIds.has(id));
   updateCartCount();
@@ -369,6 +374,17 @@ function closeOnBackdropClick(event) {
   if (event.target === itemDetailModal) {
     hideItemDetail();
   }
+}
+
+function sortItemsForBuyer(items) {
+  return [...items].sort((a, b) => {
+    const aUnavailable = a.status !== "available";
+    const bUnavailable = b.status !== "available";
+    if (aUnavailable === bUnavailable) {
+      return 0;
+    }
+    return aUnavailable ? 1 : -1;
+  });
 }
 
 async function submitCheckout(event) {
