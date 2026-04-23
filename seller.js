@@ -1,4 +1,6 @@
 const API_BASE = "/api";
+const IMAGE_MAX_DIMENSION = 1400;
+const IMAGE_JPEG_QUALITY = 0.82;
 
 const state = {
   sellerToken: "",
@@ -63,7 +65,11 @@ async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message = payload?.error || `Request failed (${response.status})`;
+    let message = payload?.error || `Request failed (${response.status})`;
+    if (response.status === 413) {
+      message =
+        "Upload is too large (413). Use fewer/smaller images or lower-resolution photos.";
+    }
     throw new Error(message);
   }
 
@@ -100,11 +106,48 @@ function fillItemFormForEdit(item) {
 }
 
 async function readImageFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
+  const originalDataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error("Unable to read image file."));
     reader.readAsDataURL(file);
+  });
+
+  if (!file.type.startsWith("image/")) {
+    return originalDataUrl;
+  }
+
+  const compressedDataUrl = await compressImageDataUrl(originalDataUrl);
+  return compressedDataUrl || originalDataUrl;
+}
+
+async function compressImageDataUrl(dataUrl) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(
+        1,
+        IMAGE_MAX_DIMENSION / Math.max(image.width, image.height)
+      );
+      const targetWidth = Math.max(1, Math.round(image.width * scale));
+      const targetHeight = Math.max(1, Math.round(image.height * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        resolve(dataUrl);
+        return;
+      }
+      context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+      const compressed = canvas.toDataURL("image/jpeg", IMAGE_JPEG_QUALITY);
+      resolve(compressed || dataUrl);
+    };
+    image.onerror = () => resolve(dataUrl);
+    image.src = dataUrl;
   });
 }
 
