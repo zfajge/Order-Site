@@ -1,6 +1,7 @@
 const API_BASE = "/api";
 const IMAGE_MAX_DIMENSION = 1400;
 const IMAGE_JPEG_QUALITY = 0.82;
+const NEW_BADGE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const state = {
   sellerToken: "",
@@ -59,6 +60,17 @@ function setMessage(element, message, isError = false) {
 function setCardDescription(element, text) {
   element.textContent = text;
   element.setAttribute("title", text);
+}
+
+function isItemNew(item) {
+  if (!item || typeof item.createdAt !== "string") {
+    return false;
+  }
+  const createdAtMs = Date.parse(item.createdAt);
+  if (!Number.isFinite(createdAtMs)) {
+    return false;
+  }
+  return Date.now() - createdAtMs <= NEW_BADGE_WINDOW_MS;
 }
 
 function getCombinedImages(item) {
@@ -244,6 +256,7 @@ function renderItems() {
     const deleteBtn = fragment.querySelector(".delete-item-btn");
     const markAvailableBtn = fragment.querySelector(".mark-available-btn");
     const galleryWrap = fragment.querySelector(".gallery-thumbs");
+    const newBadge = fragment.querySelector(".card-badge");
 
     image.src =
       item.mainImage || "https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available";
@@ -251,6 +264,9 @@ function renderItems() {
     title.textContent = item.name;
     price.textContent = formatPrice(item.price);
     setCardDescription(description, item.description);
+    if (newBadge) {
+      newBadge.classList.toggle("hidden", !isItemNew(item));
+    }
 
     if (Array.isArray(item.extraImages) && item.extraImages.length > 0) {
       item.extraImages.slice(0, 4).forEach((url, index) => {
