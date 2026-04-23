@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const fs = require("node:fs/promises");
+const fsSync = require("node:fs");
 const crypto = require("node:crypto");
 
 const app = express();
@@ -14,6 +15,18 @@ const sellerSessions = new Set();
 
 const dataDirectory = path.join(__dirname, "data");
 const dataFilePath = path.join(dataDirectory, "items.json");
+
+function detectStaticRoot() {
+  const candidates = [__dirname, process.cwd()];
+  for (const candidate of candidates) {
+    if (fsSync.existsSync(path.join(candidate, "index.html"))) {
+      return candidate;
+    }
+  }
+  return __dirname;
+}
+
+const staticRoot = detectStaticRoot();
 
 const defaultItems = [
   {
@@ -45,7 +58,7 @@ let storageMode = "file";
 let storageInitPromise = null;
 
 app.use(express.json({ limit: "20mb" }));
-app.use(express.static(__dirname));
+app.use(express.static(staticRoot));
 
 function normalizeEnv(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -735,8 +748,17 @@ app.get("/seller", (_req, res) => {
   res.redirect(302, "/seller.html");
 });
 
-app.use((_req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+app.use((req, res) => {
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "Not found." });
+  }
+
+  // Do not mask missing asset paths with index.html.
+  if (path.extname(req.path)) {
+    return res.status(404).send("Not found.");
+  }
+
+  return res.sendFile(path.join(staticRoot, "index.html"));
 });
 
 async function start() {
