@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Move-Out Sale | Seller Admin</title>
+    <title>Zach's Big Move Out Blow Out Sale Event Day | Seller Admin</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="modern-bg">
@@ -11,8 +11,8 @@
       <div class="brand">
         <span class="brand-dot" aria-hidden="true"></span>
         <div>
-          <h1>Seller Admin</h1>
-          <p>Manage listings for your move-out sale.</p>
+          <h1>Zach's Big Move Out Blow Out Sale Event Day</h1>
+          <p>Seller Admin - Manage listings for this gnarly blowout sale.</p>
         </div>
       </div>
       <a href="/" class="ghost-link">Go to Buyer Page</a>
@@ -140,8 +140,11 @@
         <div class="item-body">
           <h3 class="item-title"></h3>
           <p class="item-price"></p>
-          <p class="item-description"></p>
+          <p class="item-description item-description-clamped"></p>
           <p class="item-owner-note"></p>
+          <button type="button" class="ghost-btn view-details-btn">
+            View Full Item
+          </button>
           <div class="gallery-thumbs"></div>
           <div class="row-wrap">
             <button type="button" class="btn-secondary edit-item-btn">Edit</button>
@@ -150,6 +153,35 @@
         </div>
       </article>
     </template>
+
+    <div
+      id="item-detail-modal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="item-detail-title"
+    >
+      <div class="modal-content item-detail-modal-content">
+        <div class="modal-header">
+          <h2 id="item-detail-title"></h2>
+          <button
+            type="button"
+            id="close-item-detail-btn"
+            class="ghost-btn"
+            aria-label="Close"
+          >
+            Close
+          </button>
+        </div>
+        <div class="item-detail-body">
+          <img id="item-detail-main-image" class="item-detail-main-image" alt="" />
+          <p id="item-detail-price" class="item-price"></p>
+          <p id="item-detail-description" class="item-detail-description"></p>
+          <p id="item-detail-owner" class="item-owner-note"></p>
+          <div id="item-detail-gallery" class="item-detail-gallery"></div>
+        </div>
+      </div>
+    </div>
 
     <script src="seller.js"></script>
   </body>

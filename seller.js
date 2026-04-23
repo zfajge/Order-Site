@@ -30,6 +30,14 @@ const itemExtraImagesUrlsInput = document.getElementById("item-extra-images-urls
 const itemExtraImagesFilesInput = document.getElementById("item-extra-images-files");
 const itemsGrid = document.getElementById("items-grid");
 const itemCardTemplate = document.getElementById("item-card-template");
+const itemDetailModal = document.getElementById("item-detail-modal");
+const itemDetailCloseBtn = document.getElementById("item-detail-close-btn");
+const itemDetailTitle = document.getElementById("item-detail-title");
+const itemDetailPrice = document.getElementById("item-detail-price");
+const itemDetailDescription = document.getElementById("item-detail-description");
+const itemDetailStatus = document.getElementById("item-detail-status");
+const itemDetailMainImage = document.getElementById("item-detail-main-image");
+const itemDetailGallery = document.getElementById("item-detail-gallery");
 
 function isSellerUnlocked() {
   return Boolean(state.sellerPassword || state.sellerToken);
@@ -46,6 +54,11 @@ function formatPrice(price) {
 function setMessage(element, message, isError = false) {
   element.textContent = message;
   element.classList.toggle("error", isError);
+}
+
+function setCardDescription(element, text) {
+  element.textContent = text;
+  element.setAttribute("title", text);
 }
 
 function getItemById(itemId) {
@@ -210,7 +223,7 @@ function renderItems() {
     image.alt = item.name;
     title.textContent = item.name;
     price.textContent = formatPrice(item.price);
-    description.textContent = item.description;
+    setCardDescription(description, item.description);
 
     if (Array.isArray(item.extraImages) && item.extraImages.length > 0) {
       item.extraImages.slice(0, 4).forEach((url, index) => {
@@ -237,6 +250,12 @@ function renderItems() {
 
     editBtn.disabled = !isSellerUnlocked();
     deleteBtn.disabled = !isSellerUnlocked();
+
+    const openDetail = () => showItemDetail(item);
+    image.style.cursor = "pointer";
+    image.addEventListener("click", openDetail);
+    title.style.cursor = "pointer";
+    title.addEventListener("click", openDetail);
 
     editBtn.addEventListener("click", () => {
       if (!isSellerUnlocked()) {
@@ -269,6 +288,47 @@ function renderItems() {
 
     itemsGrid.appendChild(fragment);
   });
+}
+
+function showItemDetail(item) {
+  itemDetailTitle.textContent = item.name;
+  itemDetailPrice.textContent = formatPrice(item.price);
+  itemDetailDescription.textContent = item.description;
+  itemDetailMainImage.src =
+    item.mainImage || "https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available";
+  itemDetailMainImage.alt = item.name;
+  itemDetailStatus.textContent =
+    item.status === "available"
+      ? "Available"
+      : `${item.status === "hold" ? "On Hold" : "Bought"}${
+          item.ownerName ? ` by ${item.ownerName}` : ""
+        }`;
+
+  itemDetailGallery.innerHTML = "";
+  const allImages = [item.mainImage, ...(Array.isArray(item.extraImages) ? item.extraImages : [])]
+    .map((imageUrl) => normalizeText(imageUrl))
+    .filter(Boolean);
+
+  allImages.forEach((imageUrl, index) => {
+    const full = document.createElement("img");
+    full.className = "detail-gallery-image";
+    full.src = imageUrl;
+    full.alt = `${item.name} full photo ${index + 1}`;
+    itemDetailGallery.appendChild(full);
+  });
+
+  if (!allImages.length) {
+    const noPhotos = document.createElement("p");
+    noPhotos.className = "muted";
+    noPhotos.textContent = "No additional photos available.";
+    itemDetailGallery.appendChild(noPhotos);
+  }
+
+  itemDetailModal.classList.remove("hidden");
+}
+
+function closeItemDetailModal() {
+  itemDetailModal.classList.add("hidden");
 }
 
 async function unlockSeller(event) {
@@ -362,6 +422,12 @@ function cancelEdit() {
   setMessage(itemFormMessage, "");
 }
 
+function closeDetailOnBackdrop(event) {
+  if (event.target === itemDetailModal) {
+    closeItemDetailModal();
+  }
+}
+
 async function init() {
   await refreshItems();
   renderItems();
@@ -371,6 +437,8 @@ async function init() {
   sellerLockBtn.addEventListener("click", lockSeller);
   itemForm.addEventListener("submit", handleItemSubmit);
   itemCancelEditBtn.addEventListener("click", cancelEdit);
+  itemDetailCloseBtn.addEventListener("click", closeItemDetailModal);
+  itemDetailModal.addEventListener("click", closeDetailOnBackdrop);
 }
 
 init().catch((error) => {

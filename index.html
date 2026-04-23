@@ -3,12 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Move-Out Sale | Buyer</title>
+    <title>Zach's Big Move Out Blow Out Sale Event Day</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="marquee-banner">
+      <p>
+        Zach's Big Move Out Blow Out Sale Event Day - prices are negotiable -
+        click any item card for full details and extra photos!
+      </p>
+    </div>
+
     <header class="topbar">
-      <a class="brand" href="/">Move-Out Sale</a>
+      <a class="brand" href="/">Zach's Big Move Out Blow Out Sale Event Day</a>
       <nav class="top-actions">
         <a href="/seller.html" class="ghost-link">Seller Portal</a>
         <button id="open-cart-btn" class="primary-btn">
@@ -19,10 +26,10 @@
 
     <main class="page">
       <section class="hero-panel">
-        <h1>Furniture & Home Item Sale</h1>
+        <h1>Zach's Big Move Out Blow Out Sale Event Day</h1>
         <p>
-          I am moving out and selling my stuff. Prices are negotiable, so feel
-          free to make an offer at checkout.
+          Welcome to the loudest, brightest move-out sale around. Prices are
+          negotiable, so make your best offer at checkout.
         </p>
         <p class="muted">
           Payments are handled personally (cash, Venmo, Zelle, PayPal, etc.) -
@@ -88,13 +95,43 @@
         <div class="item-body">
           <h3 class="item-title"></h3>
           <p class="item-price"></p>
-          <p class="item-description"></p>
+          <p class="item-description description-clamp"></p>
           <p class="item-owner-note"></p>
+          <p class="click-hint">Click card to view full details & photos</p>
           <div class="gallery-thumbs"></div>
           <button class="primary-btn add-to-cart-btn">Add to cart</button>
         </div>
       </article>
     </template>
+
+    <div
+      id="item-detail-modal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-item-title"
+    >
+      <div class="modal-content detail-modal-content">
+        <div class="modal-header">
+          <h2 id="detail-item-title"></h2>
+          <button id="close-item-detail-btn" class="ghost-btn" aria-label="Close">
+            Close
+          </button>
+        </div>
+        <div class="detail-layout">
+          <img id="detail-main-image" class="detail-main-image" alt="" />
+          <div class="detail-info">
+            <p id="detail-item-price" class="item-price"></p>
+            <p id="detail-item-status" class="status-pill"></p>
+            <p id="detail-item-description" class="detail-description"></p>
+            <div id="detail-extra-images" class="detail-gallery"></div>
+            <button id="detail-add-to-cart-btn" class="primary-btn" type="button">
+              Add to cart
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="buyer.js"></script>
   </body>

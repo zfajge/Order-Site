@@ -15,6 +15,13 @@ const checkoutMessage = document.getElementById("checkout-message");
 const openCartBtn = document.getElementById("open-cart-btn");
 const closeCartBtn = document.getElementById("close-cart-btn");
 const itemCardTemplate = document.getElementById("item-card-template");
+const itemDetailModal = document.getElementById("item-detail-modal");
+const itemDetailImage = document.getElementById("item-detail-image");
+const itemDetailTitle = document.getElementById("item-detail-title");
+const itemDetailPrice = document.getElementById("item-detail-price");
+const itemDetailDescription = document.getElementById("item-detail-description");
+const itemDetailGallery = document.getElementById("item-detail-gallery");
+const itemDetailCloseBtn = document.getElementById("item-detail-close-btn");
 
 function formatPrice(price) {
   return `$${Number(price).toFixed(2)}`;
@@ -35,6 +42,65 @@ function updateCartCount() {
 function setCheckoutMessage(message, isError = false) {
   checkoutMessage.textContent = message;
   checkoutMessage.classList.toggle("error", isError);
+}
+
+function getCombinedImages(item) {
+  const images = [];
+  if (item.mainImage) {
+    images.push(item.mainImage);
+  }
+  if (Array.isArray(item.extraImages) && item.extraImages.length) {
+    item.extraImages.forEach((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        images.push(entry.trim());
+      }
+    });
+  }
+  return images.length
+    ? images
+    : ["https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available"];
+}
+
+function showItemDetail(item) {
+  const images = getCombinedImages(item);
+  itemDetailTitle.textContent = item.name;
+  itemDetailPrice.textContent = formatPrice(item.price);
+  itemDetailDescription.textContent = item.description;
+  itemDetailImage.src = images[0];
+  itemDetailImage.alt = item.name;
+  itemDetailGallery.innerHTML = "";
+
+  images.forEach((url, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "detail-gallery-btn";
+    if (index === 0) {
+      button.classList.add("active");
+    }
+
+    const thumb = document.createElement("img");
+    thumb.src = url;
+    thumb.alt = `${item.name} photo ${index + 1}`;
+    thumb.className = "detail-gallery-thumb";
+    button.appendChild(thumb);
+
+    button.addEventListener("click", () => {
+      itemDetailImage.src = url;
+      itemDetailImage.alt = `${item.name} photo ${index + 1}`;
+      itemDetailGallery
+        .querySelectorAll(".detail-gallery-btn")
+        .forEach((entry) => entry.classList.remove("active"));
+      button.classList.add("active");
+    });
+
+    itemDetailGallery.appendChild(button);
+  });
+
+  itemDetailModal.classList.remove("hidden");
+}
+
+function hideItemDetail() {
+  itemDetailModal.classList.add("hidden");
 }
 
 function parseOfferValue(value) {
@@ -101,6 +167,7 @@ function renderItems() {
     const overlayOwner = fragment.querySelector(".overlay-owner");
     const addToCartBtn = fragment.querySelector(".add-to-cart-btn");
     const galleryWrap = fragment.querySelector(".gallery-thumbs");
+    const cardOpenBtn = fragment.querySelector(".card-open-btn");
 
     image.src =
       item.mainImage || "https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available";
@@ -108,6 +175,7 @@ function renderItems() {
     title.textContent = item.name;
     price.textContent = formatPrice(item.price);
     description.textContent = item.description;
+    cardOpenBtn.addEventListener("click", () => showItemDetail(item));
 
     if (Array.isArray(item.extraImages) && item.extraImages.length > 0) {
       item.extraImages.slice(0, 4).forEach((url, index) => {
@@ -265,6 +333,10 @@ function closeCart() {
 function closeOnBackdropClick(event) {
   if (event.target === cartModal) {
     closeCart();
+    return;
+  }
+  if (event.target === itemDetailModal) {
+    hideItemDetail();
   }
 }
 
@@ -339,7 +411,9 @@ async function init() {
 
   openCartBtn.addEventListener("click", openCart);
   closeCartBtn.addEventListener("click", closeCart);
+  itemDetailCloseBtn.addEventListener("click", hideItemDetail);
   cartModal.addEventListener("click", closeOnBackdropClick);
+  itemDetailModal.addEventListener("click", closeOnBackdropClick);
   checkoutForm.addEventListener("submit", submitCheckout);
 }
 
