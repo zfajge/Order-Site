@@ -208,9 +208,12 @@ function renderItems() {
     setCardDescription(description, item.description);
 
     const openDetail = () => showItemDetail(item);
-    card.addEventListener("click", openDetail);
-    image.style.cursor = "pointer";
-    title.style.cursor = "pointer";
+    const openDetailTargets = [image, title, description, card.querySelector(".click-hint")]
+      .filter(Boolean);
+    openDetailTargets.forEach((target) => {
+      target.style.cursor = "pointer";
+      target.addEventListener("click", openDetail);
+    });
 
     if (Array.isArray(item.extraImages) && item.extraImages.length > 0) {
       galleryWrap.classList.remove("gallery-empty");
