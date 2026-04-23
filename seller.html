@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Move-Out Sale | Seller Admin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="modern-bg">
+    <header class="topbar glass">
+      <div class="brand">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <div>
+          <h1>Seller Admin</h1>
+          <p>Manage listings for your move-out sale.</p>
+        </div>
+      </div>
+      <a href="/" class="ghost-link">Go to Buyer Page</a>
+    </header>
+
+    <main class="layout-single">
+      <section class="panel glass strong">
+        <h2>Seller Access</h2>
+        <p class="muted">
+          Unlock with your seller password to add, edit, and delete items.
+        </p>
+
+        <form id="seller-unlock-form" class="stack-form">
+          <label>
+            Seller password
+            <input
+              type="password"
+              id="seller-password"
+              placeholder="Enter seller password"
+              required
+            />
+          </label>
+          <div class="row-wrap">
+            <button type="submit" class="btn-primary">Unlock Seller Controls</button>
+            <button
+              type="button"
+              id="seller-lock-btn"
+              class="btn-secondary hidden"
+            >
+              Lock Seller Controls
+            </button>
+            <span id="seller-status-pill" class="status-pill">Locked</span>
+          </div>
+          <p id="seller-unlock-message" class="muted"></p>
+        </form>
+      </section>
+
+      <section id="seller-panel" class="panel glass hidden">
+        <h2 id="item-form-title">Add Item</h2>
+        <p class="muted">
+          Add a main photo, optional gallery photos, price, and description.
+        </p>
+
+        <form id="item-form" class="stack-form">
+          <label>
+            Item name
+            <input type="text" id="item-name" required />
+          </label>
+
+          <label>
+            Price (USD)
+            <input type="number" id="item-price" min="0" step="0.01" required />
+          </label>
+
+          <label>
+            Description
+            <textarea id="item-description" rows="3" required></textarea>
+          </label>
+
+          <label>
+            Main image URL
+            <input
+              type="url"
+              id="item-main-image-url"
+              placeholder="https://example.com/photo.jpg"
+            />
+          </label>
+
+          <label>
+            Or upload main image
+            <input type="file" id="item-main-image-file" accept="image/*" />
+          </label>
+
+          <label>
+            Extra image URLs (one per line)
+            <textarea
+              id="item-extra-images-urls"
+              rows="3"
+              placeholder="https://example.com/photo2.jpg"
+            ></textarea>
+          </label>
+
+          <label>
+            Or upload extra images
+            <input
+              type="file"
+              id="item-extra-images-files"
+              accept="image/*"
+              multiple
+            />
+          </label>
+
+          <div class="row-wrap">
+            <button type="submit" id="item-submit-btn" class="btn-primary">
+              Add Item
+            </button>
+            <button
+              type="button"
+              id="item-cancel-edit-btn"
+              class="btn-secondary hidden"
+            >
+              Cancel Edit
+            </button>
+          </div>
+          <p id="item-form-message" class="muted"></p>
+        </form>
+      </section>
+
+      <section class="panel glass">
+        <h2>Current Listings</h2>
+        <p class="muted">Edit or delete existing inventory items.</p>
+        <div id="items-grid" class="items-grid"></div>
+      </section>
+    </main>
+
+    <template id="item-card-template">
+      <article class="item-card modern-card">
+        <div class="item-image-wrap">
+          <img class="item-image" alt="" />
+          <div class="item-overlay hidden">
+            <p class="overlay-status"></p>
+            <p class="overlay-owner"></p>
+          </div>
+        </div>
+        <div class="item-body">
+          <h3 class="item-title"></h3>
+          <p class="item-price"></p>
+          <p class="item-description"></p>
+          <p class="item-owner-note"></p>
+          <div class="gallery-thumbs"></div>
+          <div class="row-wrap">
+            <button type="button" class="btn-secondary edit-item-btn">Edit</button>
+            <button type="button" class="danger-btn delete-item-btn">Delete</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script src="seller.js"></script>
+  </body>
+</html>

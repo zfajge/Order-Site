@@ -5,7 +5,7 @@ const crypto = require("node:crypto");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const DEFAULT_SELLER_PASSWORD = "change-this-password";
+const DEFAULT_SELLER_PASSWORD = "Thunder235911!!";
 const SELLER_PASSWORD = process.env.SELLER_PASSWORD || DEFAULT_SELLER_PASSWORD;
 const sellerSessions = new Set();
 
@@ -131,6 +131,14 @@ app.post("/api/seller-auth", (req, res) => {
   const token = crypto.randomUUID();
   sellerSessions.add(token);
   return res.json({ ok: true, token });
+});
+
+app.post("/api/seller-logout", (req, res) => {
+  const token = normalizeString(req.body?.token);
+  if (token) {
+    sellerSessions.delete(token);
+  }
+  return res.json({ ok: true });
 });
 
 app.post("/api/items", requireSeller, async (req, res) => {
@@ -319,6 +327,10 @@ app.post("/api/checkout", async (req, res) => {
     console.error(error);
     return res.status(500).json({ error: "Checkout failed." });
   }
+});
+
+app.get("/seller", (_req, res) => {
+  res.redirect(302, "/seller.html");
 });
 
 app.use((_req, res) => {

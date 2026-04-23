@@ -3,118 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Move-Out Sale</title>
+    <title>Move-Out Sale | Buyer</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="hero">
-      <div>
-        <h1>Move-Out Sale</h1>
-        <p>
-          Grab what you want before I move. Prices are negotiable, so feel free
-          to make an offer at checkout.
-        </p>
-      </div>
-      <button id="open-cart-btn" class="cart-btn">
-        Cart (<span id="cart-count">0</span>)
-      </button>
+    <header class="topbar">
+      <a class="brand" href="/">Move-Out Sale</a>
+      <nav class="top-actions">
+        <a href="/seller.html" class="ghost-link">Seller Portal</a>
+        <button id="open-cart-btn" class="primary-btn">
+          Cart <span class="pill" id="cart-count">0</span>
+        </button>
+      </nav>
     </header>
 
-    <main>
-      <section class="inventory-section">
-        <h2>Available Items</h2>
-        <div id="items-grid" class="items-grid"></div>
+    <main class="page">
+      <section class="hero-panel">
+        <h1>Furniture & Home Item Sale</h1>
+        <p>
+          I am moving out and selling my stuff. Prices are negotiable, so feel
+          free to make an offer at checkout.
+        </p>
+        <p class="muted">
+          Payments are handled personally (cash, Venmo, Zelle, PayPal, etc.) -
+          no payment API is used on this website.
+        </p>
       </section>
 
-      <section class="seller-section">
-        <h2>Seller Listing Manager</h2>
-        <p class="muted">
-          Seller controls are password-protected. Unlock to add, edit, and delete
-          listings.
-        </p>
-
-        <div class="admin-lock">
-          <label>
-            Seller password
-            <input
-              type="password"
-              id="seller-password"
-              placeholder="Enter seller password"
-            />
-          </label>
-          <div class="admin-lock-actions">
-            <button id="unlock-seller-btn" type="button" class="ghost-btn">
-              Unlock Seller Controls
-            </button>
-            <button id="lock-seller-btn" type="button" class="ghost-btn hidden">
-              Lock Seller Controls
-            </button>
-          </div>
-          <p id="seller-auth-message" class="admin-status muted"></p>
-          <p id="seller-config-hint" class="admin-status muted"></p>
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Browse Items</h2>
+          <p class="muted">Add available items to cart and checkout.</p>
+          <button id="refresh-items-btn" class="ghost-btn" type="button">
+            Refresh Inventory
+          </button>
         </div>
-
-        <form id="item-form" class="item-form">
-          <h3 id="item-form-title">Add Item</h3>
-          <label>
-            Item name
-            <input type="text" id="item-name" required />
-          </label>
-
-          <label>
-            Price (USD)
-            <input type="number" id="item-price" min="0" step="0.01" required />
-          </label>
-
-          <label>
-            Description
-            <textarea id="item-description" rows="3" required></textarea>
-          </label>
-
-          <label>
-            Main image URL
-            <input
-              type="url"
-              id="item-main-image-url"
-              placeholder="https://example.com/photo.jpg"
-            />
-          </label>
-
-          <label>
-            Or upload main image
-            <input type="file" id="item-main-image-file" accept="image/*" />
-          </label>
-
-          <label>
-            Extra image URLs (one per line)
-            <textarea
-              id="item-extra-images-urls"
-              rows="3"
-              placeholder="https://example.com/photo2.jpg"
-            ></textarea>
-          </label>
-
-          <label>
-            Or upload extra images
-            <input
-              type="file"
-              id="item-extra-images-files"
-              accept="image/*"
-              multiple
-            />
-          </label>
-
-          <div class="item-card-actions">
-            <button type="submit" id="item-submit-btn" disabled>Add Item</button>
-            <button
-              type="button"
-              id="item-cancel-edit-btn"
-              class="ghost-btn hidden"
-            >
-              Cancel Edit
-            </button>
-          </div>
-        </form>
+        <div id="items-grid" class="items-grid"></div>
       </section>
     </main>
 
@@ -128,11 +52,11 @@
         </div>
 
         <p class="muted">
-          No payments are processed on this site. Final payment is handled
-          personally via cash, Venmo, Zelle, PayPal, etc.
+          Choose Buy or Hold for each item. Enter your name and phone number to
+          continue.
         </p>
 
-        <form id="checkout-form">
+        <form id="checkout-form" class="checkout-form">
           <div id="cart-items-container"></div>
 
           <div class="buyer-fields">
@@ -146,10 +70,9 @@
             </label>
           </div>
 
-          <button type="submit" class="checkout-btn">Submit Checkout</button>
+          <button type="submit" class="primary-btn">Submit Checkout</button>
+          <p id="checkout-message" class="inline-message"></p>
         </form>
-
-        <p id="checkout-message" class="checkout-message"></p>
       </div>
     </div>
 
@@ -168,15 +91,11 @@
           <p class="item-description"></p>
           <p class="item-owner-note"></p>
           <div class="gallery-thumbs"></div>
-          <button class="add-to-cart-btn">Add to cart</button>
-          <div class="item-card-actions seller-actions hidden">
-            <button type="button" class="ghost-btn edit-item-btn">Edit</button>
-            <button type="button" class="danger-btn delete-item-btn">Delete</button>
-          </div>
+          <button class="primary-btn add-to-cart-btn">Add to cart</button>
         </div>
       </article>
     </template>
 
-    <script src="script.js"></script>
+    <script src="buyer.js"></script>
   </body>
 </html>
