@@ -1,0 +1,25 @@
+{
+  "name": "order-site",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"No automated tests configured\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zfajge/Order-Site.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zfajge/Order-Site/issues"
+  },
+  "homepage": "https://github.com/zfajge/Order-Site#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

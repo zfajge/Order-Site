@@ -29,10 +29,33 @@
       <section class="seller-section">
         <h2>Seller Listing Manager</h2>
         <p class="muted">
-          Use this section to add items with a main photo, extra photos, price,
-          and description.
+          Seller controls are password-protected. Unlock to add, edit, and delete
+          listings.
         </p>
+
+        <div class="admin-lock">
+          <label>
+            Seller password
+            <input
+              type="password"
+              id="seller-password"
+              placeholder="Enter seller password"
+            />
+          </label>
+          <div class="admin-lock-actions">
+            <button id="unlock-seller-btn" type="button" class="ghost-btn">
+              Unlock Seller Controls
+            </button>
+            <button id="lock-seller-btn" type="button" class="ghost-btn hidden">
+              Lock Seller Controls
+            </button>
+          </div>
+          <p id="seller-auth-message" class="admin-status muted"></p>
+          <p id="seller-config-hint" class="admin-status muted"></p>
+        </div>
+
         <form id="item-form" class="item-form">
+          <h3 id="item-form-title">Add Item</h3>
           <label>
             Item name
             <input type="text" id="item-name" required />
@@ -81,7 +104,16 @@
             />
           </label>
 
-          <button type="submit">Add Item</button>
+          <div class="item-card-actions">
+            <button type="submit" id="item-submit-btn" disabled>Add Item</button>
+            <button
+              type="button"
+              id="item-cancel-edit-btn"
+              class="ghost-btn hidden"
+            >
+              Cancel Edit
+            </button>
+          </div>
         </form>
       </section>
     </main>
@@ -137,36 +169,12 @@
           <p class="item-owner-note"></p>
           <div class="gallery-thumbs"></div>
           <button class="add-to-cart-btn">Add to cart</button>
+          <div class="item-card-actions seller-actions hidden">
+            <button type="button" class="ghost-btn edit-item-btn">Edit</button>
+            <button type="button" class="danger-btn delete-item-btn">Delete</button>
+          </div>
         </div>
       </article>
-    </template>
-
-    <template id="cart-row-template">
-      <div class="cart-row">
-        <div>
-          <p class="cart-item-title"></p>
-          <p class="cart-item-price"></p>
-        </div>
-        <div class="cart-actions">
-          <label>
-            Action
-            <select class="cart-item-action" required>
-              <option value="buy">Buy</option>
-              <option value="hold">Put on hold</option>
-            </select>
-          </label>
-          <label>
-            Your offer (optional)
-            <input
-              type="number"
-              class="cart-item-offer"
-              min="0"
-              step="0.01"
-              placeholder="Offer amount"
-            />
-          </label>
-        </div>
-      </div>
     </template>
 
     <script src="script.js"></script>

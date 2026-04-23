@@ -126,6 +126,12 @@ main {
   padding: 0.8rem;
 }
 
+.item-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .item-title {
   font-size: 1.05rem;
 }
@@ -174,10 +180,45 @@ button {
   background: #fff;
 }
 
+.danger-btn {
+  border: 1px solid #f3d2d0;
+  background: #fff5f4;
+  color: var(--danger);
+}
+
 .item-form {
   margin-top: 0.9rem;
   display: grid;
   gap: 0.7rem;
+}
+
+.seller-auth {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.seller-auth-actions {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.seller-status {
+  font-size: 0.9rem;
+}
+
+.seller-pill {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f1f4fa;
+}
+
+.seller-status-unlocked {
+  background: #ebf9ee;
+  border-color: #b6e2be;
+  color: #1e7a4b;
 }
 
 label {
@@ -245,6 +286,32 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.6rem;
+}
+
+.cart-line-actions {
+  display: grid;
+  gap: 0.55rem;
+  align-items: start;
+}
+
+.gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.gallery-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.edit-controls {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .buyer-fields {
