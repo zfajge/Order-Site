@@ -35,7 +35,7 @@ const itemDetailCloseBtn = document.getElementById("item-detail-close-btn");
 const itemDetailTitle = document.getElementById("item-detail-title");
 const itemDetailPrice = document.getElementById("item-detail-price");
 const itemDetailDescription = document.getElementById("item-detail-description");
-const itemDetailStatus = document.getElementById("item-detail-status");
+const itemDetailOwner = document.getElementById("item-detail-owner");
 const itemDetailMainImage = document.getElementById("item-detail-main-image");
 const itemDetailGallery = document.getElementById("item-detail-gallery");
 
@@ -59,6 +59,23 @@ function setMessage(element, message, isError = false) {
 function setCardDescription(element, text) {
   element.textContent = text;
   element.setAttribute("title", text);
+}
+
+function getCombinedImages(item) {
+  const images = [];
+  if (typeof item.mainImage === "string" && item.mainImage.trim()) {
+    images.push(item.mainImage.trim());
+  }
+  if (Array.isArray(item.extraImages)) {
+    item.extraImages.forEach((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        images.push(entry.trim());
+      }
+    });
+  }
+  return images.length
+    ? images
+    : ["https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available"];
 }
 
 function getItemById(itemId) {
@@ -291,13 +308,13 @@ function renderItems() {
 }
 
 function showItemDetail(item) {
+  const images = getCombinedImages(item);
   itemDetailTitle.textContent = item.name;
   itemDetailPrice.textContent = formatPrice(item.price);
   itemDetailDescription.textContent = item.description;
-  itemDetailMainImage.src =
-    item.mainImage || "https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available";
+  itemDetailMainImage.src = images[0];
   itemDetailMainImage.alt = item.name;
-  itemDetailStatus.textContent =
+  itemDetailOwner.textContent =
     item.status === "available"
       ? "Available"
       : `${item.status === "hold" ? "On Hold" : "Bought"}${
@@ -305,24 +322,13 @@ function showItemDetail(item) {
         }`;
 
   itemDetailGallery.innerHTML = "";
-  const allImages = [item.mainImage, ...(Array.isArray(item.extraImages) ? item.extraImages : [])]
-    .map((imageUrl) => normalizeText(imageUrl))
-    .filter(Boolean);
-
-  allImages.forEach((imageUrl, index) => {
+  images.forEach((imageUrl, index) => {
     const full = document.createElement("img");
     full.className = "detail-gallery-image";
     full.src = imageUrl;
     full.alt = `${item.name} full photo ${index + 1}`;
     itemDetailGallery.appendChild(full);
   });
-
-  if (!allImages.length) {
-    const noPhotos = document.createElement("p");
-    noPhotos.className = "muted";
-    noPhotos.textContent = "No additional photos available.";
-    itemDetailGallery.appendChild(noPhotos);
-  }
 
   itemDetailModal.classList.remove("hidden");
 }

@@ -16,12 +16,14 @@ const openCartBtn = document.getElementById("open-cart-btn");
 const closeCartBtn = document.getElementById("close-cart-btn");
 const itemCardTemplate = document.getElementById("item-card-template");
 const itemDetailModal = document.getElementById("item-detail-modal");
-const itemDetailImage = document.getElementById("item-detail-image");
-const itemDetailTitle = document.getElementById("item-detail-title");
-const itemDetailPrice = document.getElementById("item-detail-price");
-const itemDetailDescription = document.getElementById("item-detail-description");
-const itemDetailGallery = document.getElementById("item-detail-gallery");
-const itemDetailCloseBtn = document.getElementById("item-detail-close-btn");
+const detailMainImage = document.getElementById("detail-main-image");
+const detailItemTitle = document.getElementById("detail-item-title");
+const detailItemPrice = document.getElementById("detail-item-price");
+const detailItemStatus = document.getElementById("detail-item-status");
+const detailItemDescription = document.getElementById("detail-item-description");
+const detailExtraImages = document.getElementById("detail-extra-images");
+const detailAddToCartBtn = document.getElementById("detail-add-to-cart-btn");
+const closeItemDetailBtn = document.getElementById("close-item-detail-btn");
 
 function formatPrice(price) {
   return `$${Number(price).toFixed(2)}`;
@@ -33,6 +35,11 @@ function normalizeText(value) {
 
 function getItemById(id) {
   return state.items.find((item) => item.id === id);
+}
+
+function setCardDescription(element, text) {
+  element.textContent = text;
+  element.setAttribute("title", text);
 }
 
 function updateCartCount() {
@@ -63,12 +70,31 @@ function getCombinedImages(item) {
 
 function showItemDetail(item) {
   const images = getCombinedImages(item);
-  itemDetailTitle.textContent = item.name;
-  itemDetailPrice.textContent = formatPrice(item.price);
-  itemDetailDescription.textContent = item.description;
-  itemDetailImage.src = images[0];
-  itemDetailImage.alt = item.name;
-  itemDetailGallery.innerHTML = "";
+  detailItemTitle.textContent = item.name;
+  detailItemPrice.textContent = formatPrice(item.price);
+  detailItemDescription.textContent = item.description;
+  detailMainImage.src = images[0];
+  detailMainImage.alt = item.name;
+  detailExtraImages.innerHTML = "";
+  const statusText =
+    item.status === "available"
+      ? "Available now"
+      : `${item.status === "bought" ? "Bought" : "On Hold"}${
+          item.ownerName ? ` by ${item.ownerName}` : ""
+        }`;
+  detailItemStatus.textContent = statusText;
+
+  const canAddToCart = item.status === "available" && !state.cart.includes(item.id);
+  detailAddToCartBtn.disabled = !canAddToCart;
+  detailAddToCartBtn.textContent = canAddToCart ? "Add to cart" : "Unavailable";
+  detailAddToCartBtn.onclick = () => {
+    if (!state.cart.includes(item.id) && item.status === "available") {
+      state.cart.push(item.id);
+      updateCartCount();
+      renderItems();
+      hideItemDetail();
+    }
+  };
 
   images.forEach((url, index) => {
     const button = document.createElement("button");
@@ -85,15 +111,15 @@ function showItemDetail(item) {
     button.appendChild(thumb);
 
     button.addEventListener("click", () => {
-      itemDetailImage.src = url;
-      itemDetailImage.alt = `${item.name} photo ${index + 1}`;
-      itemDetailGallery
+      detailMainImage.src = url;
+      detailMainImage.alt = `${item.name} photo ${index + 1}`;
+      detailExtraImages
         .querySelectorAll(".detail-gallery-btn")
         .forEach((entry) => entry.classList.remove("active"));
       button.classList.add("active");
     });
 
-    itemDetailGallery.appendChild(button);
+    detailExtraImages.appendChild(button);
   });
 
   itemDetailModal.classList.remove("hidden");
@@ -165,17 +191,21 @@ function renderItems() {
     const overlay = fragment.querySelector(".item-overlay");
     const overlayStatus = fragment.querySelector(".overlay-status");
     const overlayOwner = fragment.querySelector(".overlay-owner");
+    const card = fragment.querySelector(".item-card");
     const addToCartBtn = fragment.querySelector(".add-to-cart-btn");
     const galleryWrap = fragment.querySelector(".gallery-thumbs");
-    const cardOpenBtn = fragment.querySelector(".card-open-btn");
 
     image.src =
       item.mainImage || "https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available";
     image.alt = item.name;
     title.textContent = item.name;
     price.textContent = formatPrice(item.price);
-    description.textContent = item.description;
-    cardOpenBtn.addEventListener("click", () => showItemDetail(item));
+    setCardDescription(description, item.description);
+
+    const openDetail = () => showItemDetail(item);
+    card.addEventListener("click", openDetail);
+    image.style.cursor = "pointer";
+    title.style.cursor = "pointer";
 
     if (Array.isArray(item.extraImages) && item.extraImages.length > 0) {
       item.extraImages.slice(0, 4).forEach((url, index) => {
@@ -204,7 +234,8 @@ function renderItems() {
       const inCart = state.cart.includes(item.id);
       addToCartBtn.disabled = inCart;
       addToCartBtn.textContent = inCart ? "In cart" : "Add to cart";
-      addToCartBtn.addEventListener("click", () => {
+      addToCartBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
         if (!state.cart.includes(item.id)) {
           state.cart.push(item.id);
           updateCartCount();
@@ -411,7 +442,7 @@ async function init() {
 
   openCartBtn.addEventListener("click", openCart);
   closeCartBtn.addEventListener("click", closeCart);
-  itemDetailCloseBtn.addEventListener("click", hideItemDetail);
+  closeItemDetailBtn.addEventListener("click", hideItemDetail);
   cartModal.addEventListener("click", closeOnBackdropClick);
   itemDetailModal.addEventListener("click", closeOnBackdropClick);
   checkoutForm.addEventListener("submit", submitCheckout);

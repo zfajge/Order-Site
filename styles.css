@@ -115,6 +115,13 @@ a {
   font-size: clamp(1.1rem, 3.1vw, 2.05rem);
 }
 
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
 .hero-panel p {
   margin-top: 0.35rem;
 }
@@ -228,6 +235,32 @@ a {
   min-height: 4.2em;
 }
 
+.item-description-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 4.2em;
+}
+
+.click-hint {
+  font-size: 0.82rem;
+  color: #7d3ca4;
+  font-weight: 700;
+}
+
+.item-card-main-btn {
+  all: unset;
+  display: block;
+  cursor: pointer;
+}
+
+.item-card-main-btn:focus-visible {
+  outline: 3px dashed #ff2ca8;
+  outline-offset: 4px;
+}
+
 .item-owner-note {
   color: var(--muted);
   font-size: 0.93rem;
@@ -287,6 +320,50 @@ button {
   background: #fff;
   color: var(--ink);
   box-shadow: 2px 2px 0 var(--outline-soft);
+}
+
+.new-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 2px solid #7a0a43;
+  background: #ffec5a;
+  color: #7a0a43;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  animation: pulse-badge 0.95s infinite steps(2, jump-none);
+}
+
+.card-badge {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  z-index: 3;
+}
+
+.marquee-banner {
+  margin: 0 auto;
+  max-width: 1220px;
+  border: 3px solid var(--outline);
+  border-radius: 10px;
+  background: #16092c;
+  color: #f6ef72;
+  overflow: hidden;
+  box-shadow: 5px 5px 0 #4e1d7d;
+}
+
+.marquee-banner p {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 0.45rem 0;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  animation: marquee-run 12s linear infinite;
 }
 
 .danger-btn {
@@ -448,6 +525,16 @@ label {
   background: #fff;
 }
 
+.detail-layout {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.detail-info {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .modern-bg {
   background:
     linear-gradient(45deg, rgba(255, 241, 134, 0.7), transparent 45%),
@@ -460,8 +547,34 @@ label {
 }
 
 @media (min-width: 900px) {
+  .detail-layout {
+    grid-template-columns: 1.15fr 1fr;
+    align-items: start;
+  }
+
   .detail-grid {
     grid-template-columns: 1.15fr 1fr;
     align-items: start;
+  }
+}
+
+@keyframes marquee-run {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes pulse-badge {
+  0% {
+    transform: rotate(-4deg) scale(1);
+  }
+  50% {
+    transform: rotate(0deg) scale(1.08);
+  }
+  100% {
+    transform: rotate(4deg) scale(1);
   }
 }
