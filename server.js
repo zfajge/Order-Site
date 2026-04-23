@@ -26,6 +26,7 @@ function detectStaticRoot() {
 }
 
 const staticRoot = detectStaticRoot();
+const defaultSeedCreatedAt = new Date().toISOString();
 
 const defaultItems = [
   {
@@ -38,6 +39,7 @@ const defaultItems = [
     extraImages: [],
     status: "available",
     ownerName: "",
+    createdAt: defaultSeedCreatedAt,
   },
   {
     id: "seed-bookshelf",
@@ -49,6 +51,7 @@ const defaultItems = [
     extraImages: [],
     status: "available",
     ownerName: "",
+    createdAt: defaultSeedCreatedAt,
   },
 ];
 
@@ -91,6 +94,21 @@ function normalizeExtraImages(value) {
   return value.filter((entry) => typeof entry === "string");
 }
 
+function normalizeTimestamp(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const timestamp = Date.parse(trimmed);
+  if (!Number.isFinite(timestamp)) {
+    return "";
+  }
+  return new Date(timestamp).toISOString();
+}
+
 function isValidImageList(value) {
   return Array.isArray(value) && value.every((entry) => typeof entry === "string");
 }
@@ -110,6 +128,7 @@ function toApiItem(item) {
     extraImages: normalizeExtraImages(item?.extraImages),
     status,
     ownerName: normalizeString(item?.ownerName),
+    createdAt: normalizeTimestamp(item?.createdAt),
   };
   if (normalized.status === "available") {
     normalized.ownerName = "";
@@ -140,6 +159,7 @@ function fromSupabaseRecord(record) {
     extraImages,
     status: record?.status,
     ownerName: record?.owner_name,
+    createdAt: record?.created_at,
   });
 }
 
@@ -168,6 +188,9 @@ function toSupabasePayload(patch) {
   }
   if (patch.ownerName !== undefined) {
     payload.owner_name = normalizeString(patch.ownerName);
+  }
+  if (patch.createdAt !== undefined) {
+    payload.created_at = normalizeTimestamp(patch.createdAt) || null;
   }
   return payload;
 }
@@ -264,6 +287,7 @@ const fileStorage = {
       ...itemInput,
       status: "available",
       ownerName: "",
+      createdAt: new Date().toISOString(),
     });
     items.unshift(newItem);
     await writeFileItems(items);
@@ -381,6 +405,7 @@ const supabaseStorage = {
           extraImages: item.extraImages,
           status: item.status,
           ownerName: item.ownerName,
+          createdAt: item.createdAt,
         })
       );
       await supabaseRequest({
@@ -392,7 +417,7 @@ const supabaseStorage = {
   },
   async listItems() {
     const payload = await supabaseRequest({
-      queryPath: `${SUPABASE_ITEMS_TABLE}?select=id,name,price,description,main_image,extra_images,status,owner_name`,
+      queryPath: `${SUPABASE_ITEMS_TABLE}?select=id,name,price,description,main_image,extra_images,status,owner_name,created_at`,
     });
     return Array.isArray(payload) ? payload.map(fromSupabaseRecord) : [];
   },
@@ -402,6 +427,7 @@ const supabaseStorage = {
       ...itemInput,
       status: "available",
       ownerName: "",
+      createdAt: new Date().toISOString(),
     });
     const rows = await supabaseRequest({
       method: "POST",

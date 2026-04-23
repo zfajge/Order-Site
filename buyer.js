@@ -1,5 +1,6 @@
 const EMAIL_RECIPIENT = "fajgezach@gmail.com";
 const API_BASE = "/api";
+const NEW_BADGE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const state = {
   items: [],
@@ -41,6 +42,17 @@ function getItemById(id) {
 function setCardDescription(element, text) {
   element.textContent = text;
   element.setAttribute("title", text);
+}
+
+function isItemNew(item) {
+  if (!item || typeof item.createdAt !== "string") {
+    return false;
+  }
+  const createdAtMs = Date.parse(item.createdAt);
+  if (!Number.isFinite(createdAtMs)) {
+    return false;
+  }
+  return Date.now() - createdAtMs <= NEW_BADGE_WINDOW_MS;
 }
 
 function updateCartCount() {
@@ -199,6 +211,7 @@ function renderItems() {
     const card = fragment.querySelector(".item-card");
     const addToCartBtn = fragment.querySelector(".add-to-cart-btn");
     const galleryWrap = fragment.querySelector(".gallery-thumbs");
+    const newBadge = fragment.querySelector(".card-badge");
 
     image.src =
       item.mainImage || "https://via.placeholder.com/1200x800?text=Item+Photo+Not+Available";
@@ -206,6 +219,9 @@ function renderItems() {
     title.textContent = item.name;
     price.textContent = formatPrice(item.price);
     setCardDescription(description, item.description);
+    if (newBadge) {
+      newBadge.classList.toggle("hidden", !isItemNew(item));
+    }
 
     const openDetail = () => showItemDetail(item);
     const openDetailTargets = [image, title, description, card.querySelector(".click-hint")]
