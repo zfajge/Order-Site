@@ -213,6 +213,7 @@ function renderItems() {
     title.style.cursor = "pointer";
 
     if (Array.isArray(item.extraImages) && item.extraImages.length > 0) {
+      galleryWrap.classList.remove("gallery-empty");
       item.extraImages.slice(0, 4).forEach((url, index) => {
         const thumb = document.createElement("img");
         thumb.className = "gallery-thumb";
@@ -221,7 +222,7 @@ function renderItems() {
         galleryWrap.appendChild(thumb);
       });
     } else {
-      galleryWrap.classList.add("hidden");
+      galleryWrap.classList.add("gallery-empty");
     }
 
     const unavailable = item.status !== "available";

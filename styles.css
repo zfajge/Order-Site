@@ -207,7 +207,8 @@ a {
 }
 
 .item-body {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.42rem;
   padding: 0.72rem;
 }
@@ -242,6 +243,11 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   min-height: 1.45em;
+}
+
+.item-card .add-to-cart-btn {
+  align-self: start;
+  margin-top: auto;
 }
 
 .click-hint {
@@ -284,6 +290,11 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+  margin-top: auto;
+}
+
+.item-body .add-to-cart-btn {
+  margin-top: auto;
 }
 
 button,
