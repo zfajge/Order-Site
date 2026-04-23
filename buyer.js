@@ -436,16 +436,21 @@ async function submitCheckout(event) {
     renderCart();
 
     if (Array.isArray(payload.processed) && payload.processed.length > 0) {
+      setCheckoutMessage("Success! Checkout submitted.");
+      checkoutForm.reset();
+      closeCart();
+      window.alert(
+        "Success! You will now be redirected to your email app to send Zach a confirmation email."
+      );
       window.location.href = buildMailtoLink({
         buyerName: payload.buyerName || buyerName,
         buyerPhone: payload.buyerPhone || buyerPhone,
         processed: payload.processed,
       });
-      setCheckoutMessage("Checkout submitted. Your email app should open now.");
     } else {
       setCheckoutMessage("No items were processed.", true);
+      return;
     }
-    checkoutForm.reset();
   } catch (error) {
     setCheckoutMessage(error.message, true);
   }

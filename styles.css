@@ -228,20 +228,20 @@ a {
   color: var(--muted);
   font-size: 0.93rem;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 4.2em;
+  min-height: 1.45em;
 }
 
 .item-description-clamped {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 4.2em;
+  min-height: 1.45em;
 }
 
 .click-hint {
