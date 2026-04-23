@@ -42,6 +42,7 @@ const defaultItems = [
 
 let fileItemsCache = null;
 let storageMode = "file";
+let storageInitPromise = null;
 
 app.use(express.json({ limit: "20mb" }));
 app.use(express.static(__dirname));
@@ -520,6 +521,26 @@ const storage = {
   },
 };
 
+function ensureStorageInitialized() {
+  if (!storageInitPromise) {
+    storageInitPromise = storage.init().catch((error) => {
+      storageInitPromise = null;
+      throw error;
+    });
+  }
+  return storageInitPromise;
+}
+
+app.use(async (_req, res, next) => {
+  try {
+    await ensureStorageInitialized();
+    next();
+  } catch (error) {
+    console.error("Storage initialization failed:", error);
+    res.status(500).json({ error: "Storage initialization failed." });
+  }
+});
+
 function requireSeller(req, res, next) {
   const token = req.header("x-seller-token");
   if (!token || !sellerSessions.has(token)) {
@@ -719,13 +740,17 @@ app.use((_req, res) => {
 });
 
 async function start() {
-  await storage.init();
+  await ensureStorageInitialized();
   app.listen(PORT, () => {
     console.log(`Move-out sale site is running at http://localhost:${PORT}`);
   });
 }
 
-start().catch((error) => {
-  console.error("Unable to start server:", error);
-  process.exit(1);
-});
+if (require.main === module) {
+  start().catch((error) => {
+    console.error("Unable to start server:", error);
+    process.exit(1);
+  });
+}
+
+module.exports = app;

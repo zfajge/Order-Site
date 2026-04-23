@@ -43,6 +43,24 @@ SELLER_PASSWORD=your-strong-password
 
 When both Supabase env vars are present, the server uses Supabase automatically.
 
+## Deploy for free on Vercel (with Supabase)
+
+1. Push this repository to GitHub.
+2. Go to https://vercel.com and import the repo.
+3. In Vercel project settings, add environment variables:
+
+```bash
+SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_ITEMS_TABLE=moveout_items
+SELLER_PASSWORD=your-strong-password
+```
+
+4. Deploy. Vercel will use `vercel.json` and route all requests through the Node server.
+
+- Buyer link: `https://your-project.vercel.app/`
+- Seller link: `https://your-project.vercel.app/seller`
+
 ### 4) Optional: seed defaults
 
 If the table is empty, this app auto-seeds initial default items at startup.
