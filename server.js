@@ -345,7 +345,6 @@ const fileStorage = {
 
     selections.forEach((selection) => {
       const itemId = normalizeString(selection?.itemId);
-      const action = selection?.action === "hold" ? "hold" : "bought";
       const offer = parseOffer(selection?.offer);
 
       const item = items.find((entry) => entry.id === itemId);
@@ -353,17 +352,21 @@ const fileStorage = {
         skipped.push({ itemId, reason: "Item not found." });
         return;
       }
+      if (offer == null) {
+        skipped.push({ itemId, itemName: item.name, reason: "Offer is required for hold requests." });
+        return;
+      }
       if (item.status !== "available") {
         skipped.push({ itemId, itemName: item.name, reason: "Item is no longer available." });
         return;
       }
 
-      item.status = action;
+      item.status = "hold";
       item.ownerName = buyerName;
       processed.push({
         itemId: item.id,
         itemName: item.name,
-        action,
+        action: "hold",
         originalPrice: item.price,
         offer,
       });
@@ -469,8 +472,11 @@ const supabaseStorage = {
 
     for (const selection of selections) {
       const itemId = normalizeString(selection?.itemId);
-      const action = selection?.action === "hold" ? "hold" : "bought";
       const offer = parseOffer(selection?.offer);
+      if (offer == null) {
+        skipped.push({ itemId, reason: "Offer is required for hold requests." });
+        continue;
+      }
 
       const updatedRows = await supabaseRequest({
         method: "PATCH",
@@ -478,7 +484,7 @@ const supabaseStorage = {
           itemId
         )}&status=eq.available`,
         body: {
-          status: action,
+          status: "hold",
           owner_name: buyerName,
         },
         preferRepresentation: true,
@@ -490,7 +496,7 @@ const supabaseStorage = {
         processed.push({
           itemId: item.id,
           itemName: item.name,
-          action,
+          action: "hold",
           originalPrice: item.price,
           offer,
         });

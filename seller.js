@@ -73,6 +73,16 @@ function isItemNew(item) {
   return Date.now() - createdAtMs <= NEW_BADGE_WINDOW_MS;
 }
 
+function getStatusLabel(status) {
+  if (status === "bought") {
+    return "Bought";
+  }
+  if (status === "hold") {
+    return "On Hold";
+  }
+  return "Available";
+}
+
 function getCombinedImages(item) {
   const images = [];
   if (typeof item.mainImage === "string" && item.mainImage.trim()) {
@@ -255,6 +265,7 @@ function renderItems() {
     const editBtn = fragment.querySelector(".edit-item-btn");
     const deleteBtn = fragment.querySelector(".delete-item-btn");
     const markAvailableBtn = fragment.querySelector(".mark-available-btn");
+    const markSoldBtn = fragment.querySelector(".mark-sold-btn");
     const galleryWrap = fragment.querySelector(".gallery-thumbs");
     const newBadge = fragment.querySelector(".card-badge");
 
@@ -284,7 +295,7 @@ function renderItems() {
       overlay.classList.add("hidden");
       ownerNote.textContent = "Available";
     } else {
-      const statusText = item.status === "bought" ? "Bought" : "On Hold";
+      const statusText = getStatusLabel(item.status);
       overlay.classList.remove("hidden");
       overlayStatus.textContent = statusText;
       overlayOwner.textContent = item.ownerName ? `By: ${item.ownerName}` : "";
@@ -294,11 +305,14 @@ function renderItems() {
     editBtn.disabled = !isSellerUnlocked();
     deleteBtn.disabled = !isSellerUnlocked();
     markAvailableBtn.disabled = !isSellerUnlocked();
+    markSoldBtn.disabled = !isSellerUnlocked();
     markAvailableBtn.classList.toggle("hidden", item.status === "available");
+    markSoldBtn.classList.toggle("hidden", item.status !== "hold");
     markAvailableBtn.textContent =
       item.status === "hold"
         ? "Remove Hold (Mark Available)"
         : "Remove Bought (Mark Available)";
+    markSoldBtn.textContent = "Mark as Sold";
 
     const openDetail = () => showItemDetail(item);
     image.style.cursor = "pointer";
@@ -354,6 +368,25 @@ function renderItems() {
       }
     });
 
+    markSoldBtn.addEventListener("click", async () => {
+      if (!isSellerUnlocked() || item.status !== "hold") {
+        return;
+      }
+      try {
+        await apiRequest(`/items/${item.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            status: "bought",
+            ownerName: item.ownerName || "",
+          }),
+        });
+        await refreshItems();
+        renderItems();
+      } catch (error) {
+        setMessage(itemFormMessage, error.message, true);
+      }
+    });
+
     itemsGrid.appendChild(fragment);
   });
 }
@@ -368,7 +401,7 @@ function showItemDetail(item) {
   itemDetailOwner.textContent =
     item.status === "available"
       ? "Available"
-      : `${item.status === "hold" ? "On Hold" : "Bought"}${
+      : `${getStatusLabel(item.status)}${
           item.ownerName ? ` by ${item.ownerName}` : ""
         }`;
 

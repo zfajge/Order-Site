@@ -154,6 +154,10 @@ function parseOfferValue(value) {
   return numeric;
 }
 
+function describeCheckoutAction(action) {
+  return action === "bought" ? "Bought" : "On Hold";
+}
+
 async function apiRequest(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body && !headers["Content-Type"]) {
@@ -314,23 +318,23 @@ function renderCart() {
     controls.className = "cart-line-controls";
 
     const actionLabel = document.createElement("label");
-    actionLabel.textContent = "Action";
-    const actionSelect = document.createElement("select");
-    actionSelect.dataset.actionItemId = item.id;
-    actionSelect.innerHTML = `
-      <option value="buy">Buy</option>
-      <option value="hold">Put on hold</option>
-    `;
-    actionLabel.appendChild(actionSelect);
+    actionLabel.textContent = "Checkout action";
+    const actionText = document.createElement("input");
+    actionText.type = "text";
+    actionText.value = "Put on hold";
+    actionText.disabled = true;
+    actionText.dataset.actionItemId = item.id;
+    actionLabel.appendChild(actionText);
 
     const offerLabel = document.createElement("label");
-    offerLabel.textContent = "Your offer (optional)";
+    offerLabel.textContent = "Your offer";
     const offerInput = document.createElement("input");
     offerInput.type = "number";
     offerInput.step = "0.01";
     offerInput.min = "0";
     offerInput.placeholder = "Example: 80";
     offerInput.dataset.offerItemId = item.id;
+    offerInput.required = true;
     offerLabel.appendChild(offerInput);
 
     const removeBtn = document.createElement("button");
@@ -357,7 +361,7 @@ function buildMailtoLink({ buyerName, buyerPhone, processed }) {
   ];
 
   processed.forEach((entry, index) => {
-    const statusText = entry.action === "bought" ? "Bought" : "On Hold";
+    const statusText = describeCheckoutAction(entry.action);
     const offerText =
       entry.offer == null ? "No offer submitted" : `Offer submitted: ${formatPrice(entry.offer)}`;
     lines.push(
@@ -424,22 +428,32 @@ async function submitCheckout(event) {
   }
 
   const selections = [];
+  let missingOffer = false;
   state.cart.forEach((itemId) => {
     const item = getItemById(itemId);
     if (!item || item.status !== "available") {
       return;
     }
-    const actionElement = cartItemsContainer.querySelector(`[data-action-item-id="${item.id}"]`);
     const offerElement = cartItemsContainer.querySelector(`[data-offer-item-id="${item.id}"]`);
+    const offerValue = parseOfferValue(offerElement ? offerElement.value : "");
+    if (offerValue == null) {
+      missingOffer = true;
+      return;
+    }
     selections.push({
       itemId: item.id,
-      action: actionElement ? actionElement.value : "buy",
-      offer: parseOfferValue(offerElement ? offerElement.value : ""),
+      action: "hold",
+      offer: offerValue,
     });
   });
 
+  if (missingOffer) {
+    setCheckoutMessage("Please enter an offer for every item in your cart.", true);
+    return;
+  }
+
   if (!selections.length) {
-    setCheckoutMessage("No available items left in your cart.", true);
+    setCheckoutMessage("Enter an offer for each item in your cart.", true);
     return;
   }
 
@@ -456,11 +470,11 @@ async function submitCheckout(event) {
     renderCart();
 
     if (Array.isArray(payload.processed) && payload.processed.length > 0) {
-      setCheckoutMessage("Success! Checkout submitted.");
+      setCheckoutMessage("Success! Hold request submitted.");
       checkoutForm.reset();
       closeCart();
       window.alert(
-        "Success! You will now be redirected to your email app to send Zach a confirmation email."
+        "Success! Your hold request was submitted. You will now be redirected to your email app to send Zach a confirmation email."
       );
       window.location.href = buildMailtoLink({
         buyerName: payload.buyerName || buyerName,
