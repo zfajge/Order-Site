@@ -37,6 +37,7 @@ From Project Settings / API, copy:
 ```bash
 SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_ITEMS_TABLE=moveout_items
 SELLER_PASSWORD=your-strong-password
 ```
 

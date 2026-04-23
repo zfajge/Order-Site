@@ -9,7 +9,7 @@ const DEFAULT_SELLER_PASSWORD = "Thunder235911!!";
 const SELLER_PASSWORD = process.env.SELLER_PASSWORD || DEFAULT_SELLER_PASSWORD;
 const SUPABASE_URL = normalizeEnv(process.env.SUPABASE_URL);
 const SUPABASE_SERVICE_ROLE_KEY = normalizeEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
-const SUPABASE_ITEMS_TABLE = normalizeEnv(process.env.SUPABASE_ITEMS_TABLE) || "items";
+const SUPABASE_ITEMS_TABLE = normalizeEnv(process.env.SUPABASE_ITEMS_TABLE) || "moveout_items";
 const sellerSessions = new Set();
 
 const dataDirectory = path.join(__dirname, "data");
@@ -132,6 +132,9 @@ function fromSupabaseRecord(record) {
 
 function toSupabasePayload(patch) {
   const payload = {};
+  if (patch.id !== undefined) {
+    payload.id = normalizeString(patch.id);
+  }
   if (patch.name !== undefined) {
     payload.name = normalizeString(patch.name);
   }
@@ -339,9 +342,40 @@ const fileStorage = {
 
 const supabaseStorage = {
   async ensureReady() {
-    await supabaseRequest({
-      queryPath: `${SUPABASE_ITEMS_TABLE}?select=id&limit=1`,
-    });
+    let rows;
+    try {
+      rows = await supabaseRequest({
+        queryPath: `${SUPABASE_ITEMS_TABLE}?select=id&limit=1`,
+      });
+    } catch (error) {
+      const message = normalizeString(error.message);
+      if (message.includes("Could not find the table")) {
+        throw new Error(
+          `Supabase table "${SUPABASE_ITEMS_TABLE}" was not found. Run supabase-schema.sql or set SUPABASE_ITEMS_TABLE to your existing table name.`
+        );
+      }
+      throw error;
+    }
+
+    if (Array.isArray(rows) && rows.length === 0) {
+      const seedPayload = defaultItems.map((item) =>
+        toSupabasePayload({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          description: item.description,
+          mainImage: item.mainImage,
+          extraImages: item.extraImages,
+          status: item.status,
+          ownerName: item.ownerName,
+        })
+      );
+      await supabaseRequest({
+        method: "POST",
+        queryPath: SUPABASE_ITEMS_TABLE,
+        body: seedPayload,
+      });
+    }
   },
   async listItems() {
     const payload = await supabaseRequest({
@@ -351,6 +385,7 @@ const supabaseStorage = {
   },
   async createItem(itemInput) {
     const payload = toSupabasePayload({
+      id: crypto.randomUUID(),
       ...itemInput,
       status: "available",
       ownerName: "",
