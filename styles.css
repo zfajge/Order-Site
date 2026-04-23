@@ -1,0 +1,280 @@
+:root {
+  color-scheme: light;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  line-height: 1.5;
+  --bg: #f7f8fb;
+  --card: #ffffff;
+  --text: #1c1d22;
+  --muted: #63697a;
+  --accent: #315efb;
+  --accent-2: #2347bf;
+  --danger: #b42318;
+  --border: #e3e7ef;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.hero p {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  max-width: 55ch;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  padding: 1.5rem 2rem 2rem;
+}
+
+.inventory-section,
+.seller-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.inventory-section h2,
+.seller-section h2 {
+  margin-bottom: 0.6rem;
+}
+
+.items-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.item-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-image-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  background: #eaedf5;
+}
+
+.item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 0.3rem;
+  padding: 1rem;
+}
+
+.overlay-status {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.overlay-owner {
+  font-size: 0.95rem;
+}
+
+.item-body {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.8rem;
+}
+
+.item-title {
+  font-size: 1.05rem;
+}
+
+.item-price {
+  font-weight: 700;
+}
+
+.item-description,
+.item-owner-note,
+.muted {
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+  cursor: pointer;
+}
+
+.cart-btn,
+.checkout-btn,
+.item-form button,
+.add-to-cart-btn {
+  background: var(--accent);
+  color: #fff;
+}
+
+.cart-btn:hover,
+.checkout-btn:hover,
+.item-form button:hover,
+.add-to-cart-btn:hover {
+  background: var(--accent-2);
+}
+
+.ghost-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.item-form {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+input,
+textarea {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  width: 100%;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 20;
+}
+
+.modal-content {
+  width: min(860px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.cart-line {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.cart-line-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.cart-line-title {
+  font-weight: 700;
+}
+
+.line-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.6rem;
+}
+
+.buyer-fields {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.65rem;
+}
+
+.checkout-message {
+  margin-top: 1rem;
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (min-width: 1100px) {
+  main {
+    grid-template-columns: 2fr 1fr;
+    align-items: start;
+  }
+
+  .seller-section {
+    position: sticky;
+    top: 92px;
+  }
+}

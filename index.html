@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Move-Out Sale</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <h1>Move-Out Sale</h1>
+        <p>
+          Grab what you want before I move. Prices are negotiable, so feel free
+          to make an offer at checkout.
+        </p>
+      </div>
+      <button id="open-cart-btn" class="cart-btn">
+        Cart (<span id="cart-count">0</span>)
+      </button>
+    </header>
+
+    <main>
+      <section class="inventory-section">
+        <h2>Available Items</h2>
+        <div id="items-grid" class="items-grid"></div>
+      </section>
+
+      <section class="seller-section">
+        <h2>Seller Listing Manager</h2>
+        <p class="muted">
+          Use this section to add items with a main photo, extra photos, price,
+          and description.
+        </p>
+        <form id="item-form" class="item-form">
+          <label>
+            Item name
+            <input type="text" id="item-name" required />
+          </label>
+
+          <label>
+            Price (USD)
+            <input type="number" id="item-price" min="0" step="0.01" required />
+          </label>
+
+          <label>
+            Description
+            <textarea id="item-description" rows="3" required></textarea>
+          </label>
+
+          <label>
+            Main image URL
+            <input
+              type="url"
+              id="item-main-image-url"
+              placeholder="https://example.com/photo.jpg"
+            />
+          </label>
+
+          <label>
+            Or upload main image
+            <input type="file" id="item-main-image-file" accept="image/*" />
+          </label>
+
+          <label>
+            Extra image URLs (one per line)
+            <textarea
+              id="item-extra-images-urls"
+              rows="3"
+              placeholder="https://example.com/photo2.jpg"
+            ></textarea>
+          </label>
+
+          <label>
+            Or upload extra images
+            <input
+              type="file"
+              id="item-extra-images-files"
+              accept="image/*"
+              multiple
+            />
+          </label>
+
+          <button type="submit">Add Item</button>
+        </form>
+      </section>
+    </main>
+
+    <div id="cart-modal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Checkout</h2>
+          <button id="close-cart-btn" class="ghost-btn" aria-label="Close">
+            Close
+          </button>
+        </div>
+
+        <p class="muted">
+          No payments are processed on this site. Final payment is handled
+          personally via cash, Venmo, Zelle, PayPal, etc.
+        </p>
+
+        <form id="checkout-form">
+          <div id="cart-items-container"></div>
+
+          <div class="buyer-fields">
+            <label>
+              Your name
+              <input type="text" id="buyer-name" required />
+            </label>
+            <label>
+              Your phone number
+              <input type="tel" id="buyer-phone" required />
+            </label>
+          </div>
+
+          <button type="submit" class="checkout-btn">Submit Checkout</button>
+        </form>
+
+        <p id="checkout-message" class="checkout-message"></p>
+      </div>
+    </div>
+
+    <template id="item-card-template">
+      <article class="item-card">
+        <div class="item-image-wrap">
+          <img class="item-image" alt="" />
+          <div class="item-overlay hidden">
+            <p class="overlay-status"></p>
+            <p class="overlay-owner"></p>
+          </div>
+        </div>
+        <div class="item-body">
+          <h3 class="item-title"></h3>
+          <p class="item-price"></p>
+          <p class="item-description"></p>
+          <p class="item-owner-note"></p>
+          <div class="gallery-thumbs"></div>
+          <button class="add-to-cart-btn">Add to cart</button>
+        </div>
+      </article>
+    </template>
+
+    <template id="cart-row-template">
+      <div class="cart-row">
+        <div>
+          <p class="cart-item-title"></p>
+          <p class="cart-item-price"></p>
+        </div>
+        <div class="cart-actions">
+          <label>
+            Action
+            <select class="cart-item-action" required>
+              <option value="buy">Buy</option>
+              <option value="hold">Put on hold</option>
+            </select>
+          </label>
+          <label>
+            Your offer (optional)
+            <input
+              type="number"
+              class="cart-item-offer"
+              min="0"
+              step="0.01"
+              placeholder="Offer amount"
+            />
+          </label>
+        </div>
+      </div>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
