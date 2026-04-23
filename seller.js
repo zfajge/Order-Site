@@ -31,6 +31,10 @@ const itemExtraImagesFilesInput = document.getElementById("item-extra-images-fil
 const itemsGrid = document.getElementById("items-grid");
 const itemCardTemplate = document.getElementById("item-card-template");
 
+function isSellerUnlocked() {
+  return Boolean(state.sellerPassword || state.sellerToken);
+}
+
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -86,7 +90,7 @@ async function refreshItems() {
 }
 
 function updateSellerUi() {
-  const unlocked = Boolean(state.sellerToken);
+  const unlocked = isSellerUnlocked();
   sellerPanel.classList.toggle("hidden", !unlocked);
   sellerLockBtn.classList.toggle("hidden", !unlocked);
   sellerStatusPill.textContent = unlocked ? "Unlocked" : "Locked";
@@ -231,11 +235,11 @@ function renderItems() {
       ownerNote.textContent = item.ownerName ? `${statusText} by ${item.ownerName}` : statusText;
     }
 
-    editBtn.disabled = !state.sellerToken;
-    deleteBtn.disabled = !state.sellerToken;
+    editBtn.disabled = !isSellerUnlocked();
+    deleteBtn.disabled = !isSellerUnlocked();
 
     editBtn.addEventListener("click", () => {
-      if (!state.sellerToken) {
+      if (!isSellerUnlocked()) {
         return;
       }
       state.editingItemId = item.id;
@@ -248,7 +252,7 @@ function renderItems() {
     });
 
     deleteBtn.addEventListener("click", async () => {
-      if (!state.sellerToken) {
+      if (!isSellerUnlocked()) {
         return;
       }
       if (!window.confirm(`Delete "${item.name}"?`)) {
@@ -280,7 +284,7 @@ async function unlockSeller(event) {
       method: "POST",
       body: JSON.stringify({ password }),
     });
-    state.sellerToken = payload?.token || "";
+    state.sellerToken = payload?.token || "password-auth";
     state.sellerPassword = password;
     sellerUnlockForm.reset();
     setMessage(sellerUnlockMessage, "Seller controls unlocked.");
@@ -305,7 +309,7 @@ async function handleItemSubmit(event) {
   event.preventDefault();
   setMessage(itemFormMessage, "");
 
-  if (!state.sellerToken) {
+  if (!isSellerUnlocked()) {
     setMessage(itemFormMessage, "Unlock seller controls first.", true);
     return;
   }
