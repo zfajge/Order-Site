@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile | Zach's Big Move Out Blow Out Sale Event Day</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">Zach's Big Move Out Blow Out Sale Event Day</a>
+      <nav class="top-actions">
+        <a href="/" class="ghost-link">Buyer View</a>
+        <a href="/seller.html" class="ghost-link">Seller View</a>
+        <button id="logout-btn" class="ghost-btn" type="button">Sign Out</button>
+      </nav>
+    </header>
+
+    <main class="page">
+      <section class="panel">
+        <h1>Your Profile</h1>
+        <p id="profile-meta" class="muted"></p>
+      </section>
+
+      <section class="panel profile-stats-grid">
+        <article class="profile-stat-card">
+          <h2>Listings Created</h2>
+          <p id="stat-created" class="profile-stat-value">0</p>
+        </article>
+        <article class="profile-stat-card">
+          <h2>Items Sold</h2>
+          <p id="stat-sold" class="profile-stat-value">0</p>
+        </article>
+        <article class="profile-stat-card">
+          <h2>Items On Hold For You</h2>
+          <p id="stat-held-for-you" class="profile-stat-value">0</p>
+        </article>
+        <article class="profile-stat-card">
+          <h2>Hold Requests Submitted</h2>
+          <p id="stat-checkouts" class="profile-stat-value">0</p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Recent Activity</h2>
+        <div id="activity-list" class="stack-form"></div>
+      </section>
+    </main>
+
+    <script src="profile.js"></script>
+  </body>
+</html>

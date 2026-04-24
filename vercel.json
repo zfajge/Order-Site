@@ -8,8 +8,12 @@
         "includeFiles": [
           "index.html",
           "seller.html",
+          "signin.html",
+          "profile.html",
           "buyer.js",
           "seller.js",
+          "signin.js",
+          "profile.js",
           "styles.css",
           "data/**"
         ]

@@ -15,39 +15,20 @@
           <p>Seller Admin - Manage listings for this gnarly blowout sale.</p>
         </div>
       </div>
-      <a href="/" class="ghost-link">Go to Buyer Page</a>
+      <nav class="top-actions">
+        <a href="/" class="ghost-link">Go to Buyer Page</a>
+        <a href="/profile.html" class="ghost-link">Profile</a>
+        <button id="sign-out-btn" type="button" class="ghost-btn">Sign Out</button>
+      </nav>
     </header>
 
     <main class="layout-single">
       <section class="panel glass strong">
-        <h2>Seller Access</h2>
+        <h2>Seller Account</h2>
         <p class="muted">
-          Unlock with your seller password to add, edit, and delete items.
+          You are signed in as a seller. You can add, edit, and manage only your own listings.
         </p>
-
-        <form id="seller-unlock-form" class="stack-form">
-          <label>
-            Seller password
-            <input
-              type="password"
-              id="seller-password"
-              placeholder="Enter seller password"
-              required
-            />
-          </label>
-          <div class="row-wrap">
-            <button type="submit" class="btn-primary">Unlock Seller Controls</button>
-            <button
-              type="button"
-              id="seller-lock-btn"
-              class="btn-secondary hidden"
-            >
-              Lock Seller Controls
-            </button>
-            <span id="seller-status-pill" class="status-pill">Locked</span>
-          </div>
-          <p id="seller-unlock-message" class="muted"></p>
-        </form>
+        <p id="seller-account-message" class="muted"></p>
       </section>
 
       <section id="seller-panel" class="panel glass hidden">

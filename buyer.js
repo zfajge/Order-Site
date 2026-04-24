@@ -5,6 +5,7 @@ const NEW_BADGE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const state = {
   items: [],
   cart: [],
+  user: null,
 };
 
 const itemsGrid = document.getElementById("items-grid");
@@ -25,7 +26,7 @@ const detailItemDescription = document.getElementById("detail-item-description")
 const detailExtraImages = document.getElementById("detail-extra-images");
 const detailAddToCartBtn = document.getElementById("detail-add-to-cart-btn");
 const closeItemDetailBtn = document.getElementById("close-item-detail-btn");
-const checkoutWarning = document.getElementById("checkout-email-warning");
+const signOutBtn = document.getElementById("sign-out-btn");
 
 function formatPrice(price) {
   return `$${Number(price).toFixed(2)}`;
@@ -166,6 +167,7 @@ async function apiRequest(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    credentials: "include",
   });
   let payload = null;
   const contentType = response.headers.get("content-type") || "";
@@ -178,6 +180,16 @@ async function apiRequest(path, options = {}) {
     throw new Error(errorMessage);
   }
   return payload;
+}
+
+async function loadAuthContext() {
+  const me = await apiRequest("/me");
+  if (!me?.authenticated || !me.user) {
+    window.location.href = "/signin?next=/";
+    return false;
+  }
+  state.user = me.user;
+  return true;
 }
 
 async function refreshItems() {
@@ -323,7 +335,6 @@ function renderCart() {
     actionText.type = "text";
     actionText.value = "Put on hold";
     actionText.disabled = true;
-    actionText.dataset.actionItemId = item.id;
     actionLabel.appendChild(actionText);
 
     const offerLabel = document.createElement("label");
@@ -417,17 +428,6 @@ function closeOnBackdropClick(event) {
   }
 }
 
-function sortItemsForBuyer(items) {
-  return [...items].sort((a, b) => {
-    const aUnavailable = a.status !== "available";
-    const bUnavailable = b.status !== "available";
-    if (aUnavailable === bUnavailable) {
-      return 0;
-    }
-    return aUnavailable ? 1 : -1;
-  });
-}
-
 async function submitCheckout(event) {
   event.preventDefault();
   setCheckoutMessage("");
@@ -461,7 +461,6 @@ async function submitCheckout(event) {
       itemId: item.id,
       itemName: item.name,
       originalPrice: item.price,
-      action: "hold",
       offer: offerValue,
     });
   });
@@ -504,18 +503,33 @@ async function submitCheckout(event) {
       });
     } else {
       setCheckoutMessage("No items were processed.", true);
-      return;
     }
   } catch (error) {
     setCheckoutMessage(error.message, true);
   }
 }
 
+async function handleSignOut() {
+  try {
+    await apiRequest("/auth/signout", { method: "POST" });
+  } catch (error) {
+    window.alert(error.message);
+    return;
+  }
+  window.location.href = "/signin";
+}
+
 async function init() {
+  const authOk = await loadAuthContext();
+  if (!authOk) {
+    return;
+  }
+
   await refreshItems();
   renderItems();
   updateCartCount();
 
+  signOutBtn.addEventListener("click", handleSignOut);
   openCartBtn.addEventListener("click", openCart);
   closeCartBtn.addEventListener("click", closeCart);
   closeItemDetailBtn.addEventListener("click", hideItemDetail);

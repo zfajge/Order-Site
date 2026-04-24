@@ -1,6 +1,6 @@
 # Order-Site
 
-Move-out sale site with separate buyer and seller pages.
+Move-out sale site with separate buyer and seller pages, account sign-in, and profile activity tracking.
 
 ## Run locally
 
@@ -11,7 +11,30 @@ npm run setup-and-start
 - Buyer page: `http://localhost:3000/`
 - Seller page: `http://localhost:3000/seller`
 
-Default seller password: `Thunder235911!!`
+## Account system (new)
+
+- Start at `/signin` to create an account or sign in.
+- Supports email-based accounts (including Gmail addresses).
+- Roles:
+  - **buyer**: browse and submit hold requests with offers.
+  - **seller**: create/manage listings.
+- Sessions are cookie-based and persisted server-side using signed cookies.
+- Profile page at `/profile` shows account summary and recent activity.
+
+### Seller ownership rules
+
+- Sellers can create listings.
+- Sellers can edit/delete **only listings they created**.
+- Sellers can mark held listings as sold (shows Bought on cards).
+
+### Important security note
+
+This app now stores user credentials in local JSON for simple self-hosted use.
+For production deployments, use HTTPS and set a strong `SESSION_SECRET`.
+
+```bash
+SESSION_SECRET=your-long-random-session-secret
+```
 
 ## Deploy with persistent storage (Supabase)
 
@@ -38,7 +61,7 @@ From Project Settings / API, copy:
 SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 SUPABASE_ITEMS_TABLE=moveout_items
-SELLER_PASSWORD=your-strong-password
+SESSION_SECRET=your-long-random-session-secret
 ```
 
 When both Supabase env vars are present, the server uses Supabase automatically.
@@ -53,13 +76,15 @@ When both Supabase env vars are present, the server uses Supabase automatically.
 SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 SUPABASE_ITEMS_TABLE=moveout_items
-SELLER_PASSWORD=your-strong-password
+SESSION_SECRET=your-long-random-session-secret
 ```
 
 4. Deploy. Vercel will use `vercel.json` and route all requests through the Node server.
 
+- Sign-in link: `https://your-project.vercel.app/signin`
 - Buyer link: `https://your-project.vercel.app/`
 - Seller link: `https://your-project.vercel.app/seller`
+- Profile link: `https://your-project.vercel.app/profile`
 
 ### 4) Optional: seed defaults
 

@@ -569,6 +569,129 @@ label {
   display: none !important;
 }
 
+.auth-layout {
+  max-width: 980px;
+}
+
+.auth-card {
+  max-width: 620px;
+  margin: 1rem auto;
+}
+
+.auth-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+  margin-top: 0.7rem;
+}
+
+.auth-choice {
+  border: 3px solid var(--outline);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 3px 3px 0 var(--outline-soft);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.auth-choice h3 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.auth-note {
+  margin-top: 0.75rem;
+  font-size: 0.92rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+}
+
+.profile-stat {
+  border: 3px solid var(--outline);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.65rem;
+  box-shadow: 3px 3px 0 var(--outline-soft);
+}
+
+.profile-stat h3 {
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.profile-stat .value {
+  margin-top: 0.3rem;
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.activity-list {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.activity-item {
+  border: 3px solid var(--outline-soft);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.55rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.activity-type {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.9rem;
+}
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7rem;
+}
+
+.profile-stat-card {
+  border: 3px solid var(--outline);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 3px 3px 0 var(--outline-soft);
+  padding: 0.65rem;
+}
+
+.profile-stat-card h2 {
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.profile-stat-value {
+  margin-top: 0.3rem;
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
 @media (min-width: 900px) {
   .detail-layout {
     grid-template-columns: 1.15fr 1fr;

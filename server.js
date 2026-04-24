@@ -6,14 +6,24 @@ const crypto = require("node:crypto");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const DEFAULT_SELLER_PASSWORD = "Thunder235911!!";
-const SELLER_PASSWORD = process.env.SELLER_PASSWORD || DEFAULT_SELLER_PASSWORD;
 const SUPABASE_URL = normalizeEnv(process.env.SUPABASE_URL);
 const SUPABASE_SERVICE_ROLE_KEY = normalizeEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const SUPABASE_ITEMS_TABLE = normalizeEnv(process.env.SUPABASE_ITEMS_TABLE) || "moveout_items";
+const SUPABASE_USERS_TABLE = normalizeEnv(process.env.SUPABASE_USERS_TABLE) || "moveout_users";
+const SUPABASE_LISTING_META_TABLE =
+  normalizeEnv(process.env.SUPABASE_LISTING_META_TABLE) || "moveout_listing_meta";
+const SUPABASE_ACTIVITY_TABLE =
+  normalizeEnv(process.env.SUPABASE_ACTIVITY_TABLE) || "moveout_activity";
+const SESSION_COOKIE_NAME = "moveout_session";
+const SESSION_SECRET = normalizeEnv(process.env.SESSION_SECRET) || "moveout-dev-session-secret";
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const AUTH_ROLES = new Set(["buyer", "seller"]);
 
 const dataDirectory = path.join(__dirname, "data");
 const dataFilePath = path.join(dataDirectory, "items.json");
+const usersFilePath = path.join(dataDirectory, "users.json");
+const listingMetaFilePath = path.join(dataDirectory, "listing-meta.json");
+const activityFilePath = path.join(dataDirectory, "activity.json");
 
 function detectStaticRoot() {
   const candidates = [__dirname, process.cwd()];
@@ -56,8 +66,12 @@ const defaultItems = [
 ];
 
 let fileItemsCache = null;
+let usersCache = null;
+let listingMetaCache = null;
+let activityCache = null;
 let storageMode = "file";
 let storageInitPromise = null;
+let authStoreInitPromise = null;
 
 app.use(express.json({ limit: "20mb" }));
 app.use(express.static(staticRoot));
@@ -73,10 +87,17 @@ function normalizeString(value) {
   return value.trim();
 }
 
+function normalizeEmail(value) {
+  return normalizeString(value).toLowerCase();
+}
+
+function normalizeRole(value) {
+  const role = normalizeString(value).toLowerCase();
+  return AUTH_ROLES.has(role) ? role : "";
+}
+
 function normalizeStatus(value) {
-  return value === "bought" || value === "hold" || value === "available"
-    ? value
-    : "available";
+  return value === "bought" || value === "hold" || value === "available" ? value : "available";
 }
 
 function normalizePrice(value) {
@@ -248,13 +269,133 @@ function parseOffer(value) {
   return Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
 }
 
-async function ensureDataFile() {
+function parseCookies(req) {
+  const cookieHeader = normalizeString(req.headers?.cookie);
+  if (!cookieHeader) {
+    return {};
+  }
+  return cookieHeader.split(";").reduce((accumulator, pair) => {
+    const [keyPart, ...valueParts] = pair.split("=");
+    const key = normalizeString(keyPart);
+    if (!key) {
+      return accumulator;
+    }
+    accumulator[key] = decodeURIComponent(valueParts.join("=") || "");
+    return accumulator;
+  }, {});
+}
+
+function createPasswordHash(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, storedHash) {
+  const [salt, hash] = normalizeString(storedHash).split(":");
+  if (!salt || !hash) {
+    return false;
+  }
+  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(derived, "hex"));
+}
+
+function createSessionToken(userId) {
+  const payload = {
+    userId,
+    exp: Date.now() + SESSION_MAX_AGE_SECONDS * 1000,
+    nonce: crypto.randomBytes(8).toString("hex"),
+  };
+  const encodedPayload = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", SESSION_SECRET)
+    .update(encodedPayload)
+    .digest("base64url");
+  return `${encodedPayload}.${signature}`;
+}
+
+function parseSessionToken(token) {
+  const rawToken = normalizeString(token);
+  if (!rawToken.includes(".")) {
+    return null;
+  }
+  const [encodedPayload, signature] = rawToken.split(".");
+  if (!encodedPayload || !signature) {
+    return null;
+  }
+  const expectedSignature = crypto
+    .createHmac("sha256", SESSION_SECRET)
+    .update(encodedPayload)
+    .digest("base64url");
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+    if (!payload?.userId || !payload?.exp || Number(payload.exp) < Date.now()) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function applySessionCookie(res, userId) {
+  const sessionToken = createSessionToken(userId);
+  const secureAttribute = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  res.setHeader(
+    "Set-Cookie",
+    `${SESSION_COOKIE_NAME}=${encodeURIComponent(
+      sessionToken
+    )}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}${secureAttribute}`
+  );
+}
+
+function clearSessionCookie(res) {
+  const secureAttribute = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  res.setHeader(
+    "Set-Cookie",
+    `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureAttribute}`
+  );
+}
+
+function sanitizeUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    displayName: user.displayName,
+    phone: user.phone || "",
+    createdAt: user.createdAt,
+  };
+}
+
+async function ensureJsonFile(filePath, defaultValue) {
   await fs.mkdir(dataDirectory, { recursive: true });
   try {
-    await fs.access(dataFilePath);
+    await fs.access(filePath);
   } catch {
-    await fs.writeFile(dataFilePath, JSON.stringify(defaultItems, null, 2), "utf8");
+    await fs.writeFile(filePath, JSON.stringify(defaultValue, null, 2), "utf8");
   }
+}
+
+async function ensureDataFile() {
+  await ensureJsonFile(dataFilePath, defaultItems);
+}
+
+async function ensureAuthStoreInitialized() {
+  if (!authStoreInitPromise) {
+    authStoreInitPromise = (async () => {
+      await ensureJsonFile(usersFilePath, []);
+      await ensureJsonFile(listingMetaFilePath, {});
+      await ensureJsonFile(activityFilePath, []);
+    })().catch((error) => {
+      authStoreInitPromise = null;
+      throw error;
+    });
+  }
+  return authStoreInitPromise;
 }
 
 async function readFileItems() {
@@ -272,8 +413,103 @@ async function readFileItems() {
 
 async function writeFileItems(items) {
   fileItemsCache = items.map(toApiItem);
-  const payload = JSON.stringify(fileItemsCache, null, 2);
-  await fs.writeFile(dataFilePath, payload, "utf8");
+  await fs.writeFile(dataFilePath, JSON.stringify(fileItemsCache, null, 2), "utf8");
+}
+
+async function readUsers() {
+  if (usersCache) {
+    return usersCache;
+  }
+  const raw = await fs.readFile(usersFilePath, "utf8");
+  const parsed = JSON.parse(raw);
+  usersCache = Array.isArray(parsed) ? parsed : [];
+  return usersCache;
+}
+
+async function writeUsers(users) {
+  usersCache = users;
+  await fs.writeFile(usersFilePath, JSON.stringify(users, null, 2), "utf8");
+}
+
+async function readListingMeta() {
+  if (listingMetaCache) {
+    return listingMetaCache;
+  }
+  const raw = await fs.readFile(listingMetaFilePath, "utf8");
+  const parsed = JSON.parse(raw);
+  listingMetaCache = parsed && typeof parsed === "object" ? parsed : {};
+  return listingMetaCache;
+}
+
+async function writeListingMeta(meta) {
+  listingMetaCache = meta;
+  await fs.writeFile(listingMetaFilePath, JSON.stringify(meta, null, 2), "utf8");
+}
+
+async function readActivity() {
+  if (activityCache) {
+    return activityCache;
+  }
+  const raw = await fs.readFile(activityFilePath, "utf8");
+  const parsed = JSON.parse(raw);
+  activityCache = Array.isArray(parsed) ? parsed : [];
+  return activityCache;
+}
+
+async function writeActivity(entries) {
+  activityCache = entries;
+  await fs.writeFile(activityFilePath, JSON.stringify(entries, null, 2), "utf8");
+}
+
+async function recordActivity(entry) {
+  const activities = await readActivity();
+  activities.unshift({
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    ...entry,
+  });
+  if (activities.length > 5000) {
+    activities.length = 5000;
+  }
+  await writeActivity(activities);
+}
+
+async function findUserByEmail(email) {
+  const users = await readUsers();
+  const normalized = normalizeEmail(email);
+  return users.find((user) => normalizeEmail(user.email) === normalized) || null;
+}
+
+async function findUserById(userId) {
+  const users = await readUsers();
+  return users.find((user) => normalizeString(user.id) === normalizeString(userId)) || null;
+}
+
+async function getCurrentUser(req) {
+  const cookies = parseCookies(req);
+  const sessionToken = cookies[SESSION_COOKIE_NAME];
+  if (!sessionToken) {
+    return null;
+  }
+  const payload = parseSessionToken(sessionToken);
+  if (!payload) {
+    return null;
+  }
+  return findUserById(payload.userId);
+}
+
+function canEditListing(user, listingMetaEntry) {
+  if (!user || user.role !== "seller") {
+    return false;
+  }
+  return normalizeString(listingMetaEntry?.creatorId) === normalizeString(user.id);
+}
+
+function attachListingMetadata(items, listingMeta) {
+  return items.map((item) => ({
+    ...item,
+    creatorId: normalizeString(listingMeta[item.id]?.creatorId),
+  }));
 }
 
 const fileStorage = {
@@ -575,60 +811,170 @@ function ensureStorageInitialized() {
   return storageInitPromise;
 }
 
-app.use(async (_req, res, next) => {
+async function getProfileSummary(user) {
+  const [items, listingMeta, activities] = await Promise.all([
+    storage.listItems(),
+    readListingMeta(),
+    readActivity(),
+  ]);
+  const userId = normalizeString(user.id);
+
+  const itemsCreatedCount = items.filter(
+    (item) => normalizeString(listingMeta[item.id]?.creatorId) === userId
+  ).length;
+  const itemsSoldCount = items.filter(
+    (item) =>
+      item.status === "bought" && normalizeString(listingMeta[item.id]?.creatorId) === userId
+  ).length;
+  const itemsOnHoldForYouCount = items.filter(
+    (item) => item.status === "hold" && normalizeString(listingMeta[item.id]?.holderId) === userId
+  ).length;
+  const itemsBoughtCount = items.filter(
+    (item) =>
+      item.status === "bought" && normalizeString(listingMeta[item.id]?.buyerId) === userId
+  ).length;
+  const holdRequestsSubmittedCount = activities.filter(
+    (entry) => entry.userId === userId && entry.type === "checkout-hold-submitted"
+  ).length;
+
+  const recentActivities = activities.filter((entry) => entry.userId === userId).slice(0, 30);
+
+  return {
+    summary: {
+      itemsCreatedCount,
+      itemsSoldCount,
+      itemsOnHoldForYouCount,
+      itemsBoughtCount,
+      holdRequestsSubmittedCount,
+    },
+    canManageAllListings: false,
+    recentActivities,
+  };
+}
+
+app.use(async (req, res, next) => {
   try {
     await ensureStorageInitialized();
+    await ensureAuthStoreInitialized();
+    req.user = await getCurrentUser(req);
     next();
   } catch (error) {
-    console.error("Storage initialization failed:", error);
-    res.status(500).json({ error: "Storage initialization failed." });
+    console.error("Initialization failed:", error);
+    res.status(500).json({ error: "Server initialization failed." });
   }
 });
 
-function requireSeller(req, res, next) {
-  const password = normalizeString(req.header("x-seller-password"));
-  if (!password || password !== SELLER_PASSWORD) {
-    return res.status(401).json({ error: "Seller access required." });
+function requireAuth(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: "Authentication required." });
   }
   return next();
 }
 
-app.get("/api/items", async (_req, res) => {
+function requireSeller(req, res, next) {
+  if (!req.user || req.user.role !== "seller") {
+    return res.status(403).json({ error: "Seller account required." });
+  }
+  return next();
+}
+
+app.post("/api/auth/signup", async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const password = normalizeString(req.body?.password);
+  const displayName = normalizeString(req.body?.displayName);
+  const phone = normalizeString(req.body?.phone);
+  const role = normalizeRole(req.body?.role);
+
+  if (!email || !password || !displayName || !role) {
+    return res.status(400).json({ error: "Email, password, display name, and role are required." });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters." });
+  }
+
   try {
-    const items = await storage.listItems();
-    res.json({ items });
+    const existing = await findUserByEmail(email);
+    if (existing) {
+      return res.status(409).json({ error: "An account with this email already exists." });
+    }
+
+    const users = await readUsers();
+    const user = {
+      id: crypto.randomUUID(),
+      email,
+      passwordHash: createPasswordHash(password),
+      role,
+      displayName,
+      phone,
+      createdAt: new Date().toISOString(),
+    };
+    users.push(user);
+    await writeUsers(users);
+    applySessionCookie(res, user.id);
+    await recordActivity({
+      userId: user.id,
+      type: "account-created",
+    });
+    return res.status(201).json({ user: sanitizeUser(user) });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to load items." });
+    return res.status(500).json({ error: "Could not create account." });
   }
 });
 
-app.get("/api/seller-config", (_req, res) => {
-  const usingDefaultPassword = SELLER_PASSWORD === DEFAULT_SELLER_PASSWORD;
-  const storageHint =
-    storageMode === "supabase"
-      ? "Inventory is backed by Supabase."
-      : "Inventory is backed by local JSON file storage.";
-
-  res.json({
-    usingDefaultPassword,
-    storageMode,
-    hint: usingDefaultPassword
-      ? `Server is using the default seller password. ${storageHint}`
-      : `Seller password is configured. ${storageHint}`,
-  });
-});
-
-app.post("/api/seller-auth", (req, res) => {
+app.post("/api/auth/signin", async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
   const password = normalizeString(req.body?.password);
-  if (!password || password !== SELLER_PASSWORD) {
-    return res.status(401).json({ error: "Seller password is incorrect." });
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
   }
+
+  try {
+    const user = await findUserByEmail(email);
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+    applySessionCookie(res, user.id);
+    return res.json({ user: sanitizeUser(user) });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Could not sign in." });
+  }
+});
+
+app.post("/api/auth/signout", (req, res) => {
+  clearSessionCookie(res);
   return res.json({ ok: true });
 });
 
-app.post("/api/seller-logout", (req, res) => {
-  return res.json({ ok: true });
+app.get("/api/me", (req, res) => {
+  if (!req.user) {
+    return res.json({ authenticated: false, user: null });
+  }
+  return res.json({ authenticated: true, user: sanitizeUser(req.user) });
+});
+
+app.get("/api/profile", requireAuth, async (req, res) => {
+  try {
+    const profile = await getProfileSummary(req.user);
+    return res.json({
+      user: sanitizeUser(req.user),
+      profile,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Could not load profile." });
+  }
+});
+
+app.get("/api/items", async (_req, res) => {
+  try {
+    const [items, listingMeta] = await Promise.all([storage.listItems(), readListingMeta()]);
+    return res.json({ items: attachListingMetadata(items, listingMeta) });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to load items." });
+  }
 });
 
 app.post("/api/items", requireSeller, async (req, res) => {
@@ -655,15 +1001,38 @@ app.post("/api/items", requireSeller, async (req, res) => {
       price,
       extraImages: extraImages || [],
     });
-    const items = await storage.listItems();
-    res.status(201).json({ item, items });
+
+    const listingMeta = await readListingMeta();
+    listingMeta[item.id] = {
+      creatorId: req.user.id,
+      holderId: "",
+      buyerId: "",
+    };
+    await writeListingMeta(listingMeta);
+
+    await recordActivity({
+      userId: req.user.id,
+      type: "item-created",
+      itemId: item.id,
+      itemName: item.name,
+    });
+
+    const items = attachListingMetadata(await storage.listItems(), listingMeta);
+    return res.status(201).json({ item: { ...item, creatorId: req.user.id }, items });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Could not create item." });
+    return res.status(500).json({ error: "Could not create item." });
   }
 });
 
 app.put("/api/items/:itemId", requireSeller, async (req, res) => {
+  const itemId = normalizeString(req.params.itemId);
+  const listingMeta = await readListingMeta();
+  const metaEntry = listingMeta[itemId] || { creatorId: "", holderId: "", buyerId: "" };
+  if (!canEditListing(req.user, metaEntry)) {
+    return res.status(403).json({ error: "You can only edit your own listings." });
+  }
+
   const patch = {};
   if (req.body?.name != null) {
     const name = normalizeString(req.body.name);
@@ -703,12 +1072,29 @@ app.put("/api/items/:itemId", requireSeller, async (req, res) => {
   }
 
   try {
-    const item = await storage.updateItem(req.params.itemId, patch);
+    const item = await storage.updateItem(itemId, patch);
     if (!item) {
       return res.status(404).json({ error: "Item not found." });
     }
-    const items = await storage.listItems();
-    return res.json({ item, items });
+
+    if (patch.status === "available") {
+      metaEntry.holderId = "";
+      metaEntry.buyerId = "";
+    } else if (patch.status === "bought") {
+      metaEntry.buyerId = metaEntry.holderId || metaEntry.buyerId || "";
+    }
+    listingMeta[itemId] = metaEntry;
+    await writeListingMeta(listingMeta);
+
+    await recordActivity({
+      userId: req.user.id,
+      type: "item-updated",
+      itemId: item.id,
+      itemName: item.name,
+    });
+
+    const items = attachListingMetadata(await storage.listItems(), listingMeta);
+    return res.json({ item: { ...item, creatorId: normalizeString(metaEntry.creatorId) }, items });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Could not update item." });
@@ -716,12 +1102,26 @@ app.put("/api/items/:itemId", requireSeller, async (req, res) => {
 });
 
 app.delete("/api/items/:itemId", requireSeller, async (req, res) => {
+  const itemId = normalizeString(req.params.itemId);
+  const listingMeta = await readListingMeta();
+  const metaEntry = listingMeta[itemId] || { creatorId: "", holderId: "", buyerId: "" };
+  if (!canEditListing(req.user, metaEntry)) {
+    return res.status(403).json({ error: "You can only delete your own listings." });
+  }
+
   try {
-    const deleted = await storage.deleteItem(req.params.itemId);
+    const deleted = await storage.deleteItem(itemId);
     if (!deleted) {
       return res.status(404).json({ error: "Item not found." });
     }
-    const items = await storage.listItems();
+    delete listingMeta[itemId];
+    await writeListingMeta(listingMeta);
+    await recordActivity({
+      userId: req.user.id,
+      type: "item-deleted",
+      itemId,
+    });
+    const items = attachListingMetadata(await storage.listItems(), listingMeta);
     return res.json({ items });
   } catch (error) {
     console.error(error);
@@ -729,9 +1129,9 @@ app.delete("/api/items/:itemId", requireSeller, async (req, res) => {
   }
 });
 
-app.post("/api/checkout", async (req, res) => {
-  const buyerName = normalizeString(req.body?.buyerName);
-  const buyerPhone = normalizeString(req.body?.buyerPhone);
+app.post("/api/checkout", requireAuth, async (req, res) => {
+  const buyerName = normalizeString(req.body?.buyerName) || normalizeString(req.user?.displayName);
+  const buyerPhone = normalizeString(req.body?.buyerPhone) || normalizeString(req.user?.phone);
   const selections = Array.isArray(req.body?.selections) ? req.body.selections : [];
 
   if (!buyerName || !buyerPhone) {
@@ -742,25 +1142,44 @@ app.post("/api/checkout", async (req, res) => {
   }
 
   try {
-    const { processed, skipped, items } = await storage.checkout({
+    const checkoutResult = await storage.checkout({
       buyerName,
       selections,
     });
 
-    if (!processed.length) {
+    if (!checkoutResult.processed.length) {
+      const items = attachListingMetadata(checkoutResult.items, await readListingMeta());
       return res.status(409).json({
         error: "None of the selected items are available anymore.",
-        processed,
-        skipped,
+        processed: checkoutResult.processed,
+        skipped: checkoutResult.skipped,
         items,
       });
     }
 
+    const listingMeta = await readListingMeta();
+    for (const entry of checkoutResult.processed) {
+      const itemId = normalizeString(entry.itemId);
+      const current = listingMeta[itemId] || { creatorId: "", holderId: "", buyerId: "" };
+      current.holderId = req.user.id;
+      current.buyerId = "";
+      listingMeta[itemId] = current;
+      await recordActivity({
+        userId: req.user.id,
+        type: "checkout-hold-submitted",
+        itemId,
+        itemName: normalizeString(entry.itemName),
+        offer: entry.offer,
+      });
+    }
+    await writeListingMeta(listingMeta);
+
+    const items = attachListingMetadata(checkoutResult.items, listingMeta);
     return res.json({
       buyerName,
       buyerPhone,
-      processed,
-      skipped,
+      processed: checkoutResult.processed,
+      skipped: checkoutResult.skipped,
       items,
     });
   } catch (error) {
@@ -769,8 +1188,16 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
+app.get("/signin", (_req, res) => {
+  res.sendFile(path.join(staticRoot, "signin.html"));
+});
+
+app.get("/profile", (_req, res) => {
+  res.sendFile(path.join(staticRoot, "profile.html"));
+});
+
 app.get("/seller", (_req, res) => {
-  res.redirect(302, "/seller.html");
+  res.sendFile(path.join(staticRoot, "seller.html"));
 });
 
 app.use((req, res) => {
@@ -778,7 +1205,6 @@ app.use((req, res) => {
     return res.status(404).json({ error: "Not found." });
   }
 
-  // Do not mask missing asset paths with index.html.
   if (path.extname(req.path)) {
     return res.status(404).send("Not found.");
   }
@@ -788,6 +1214,7 @@ app.use((req, res) => {
 
 async function start() {
   await ensureStorageInitialized();
+  await ensureAuthStoreInitialized();
   app.listen(PORT, () => {
     console.log(`Move-out sale site is running at http://localhost:${PORT}`);
   });
